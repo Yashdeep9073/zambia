@@ -1,0 +1,8 @@
+{
+  "name": "Zambians In India (ZII)",
+  "description": "A quasi-official student recruitment and mobility ecosystem aligned with Zambia and India governments.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
