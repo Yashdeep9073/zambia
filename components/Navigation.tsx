@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserRole, PublicView } from '../types';
-import { Shield, LogOut, Bell, Search, Menu, X, User, ArrowUp, Lock } from 'lucide-react';
+import { Shield, LogOut, Bell, Search, Menu, X, User, ArrowUp, Lock, Sparkles, Building } from 'lucide-react';
 
 interface NavigationProps {
   currentRole: UserRole | null;
@@ -24,11 +25,10 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
 
   const navItems = [
     { label: 'Home', view: PublicView.HOME },
+    { label: 'Courses', view: PublicView.COURSES },
     { label: 'About Us', view: PublicView.ABOUT },
-    { label: 'Courses / Programs', view: PublicView.COURSES },
+    { label: 'Contact', view: PublicView.CONTACT }, // Reordered as requested
     { label: 'Student Centre', view: PublicView.STUDENT_CENTRE },
-    { label: 'Portal Login', view: PublicView.PORTAL_LOGIN },
-    { label: 'Contact Us', view: PublicView.CONTACT },
   ];
 
   return (
@@ -54,7 +54,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
                    <button 
                      key={item.label}
                      onClick={() => onViewChange(item.view)}
-                     className={`px-4 py-2 text-sm font-bold transition rounded-full ${
+                     className={`px-3 py-2 text-sm font-bold transition rounded-full ${
                        currentView === item.view 
                          ? 'bg-white text-emerald-900 shadow-md' 
                          : 'text-emerald-100 hover:text-white hover:bg-emerald-800'
@@ -63,16 +63,33 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
                      {item.label}
                    </button>
                  ))}
+
+                 {/* For Universities Button */}
+                 <button 
+                    onClick={() => onViewChange(PublicView.FOR_UNIVERSITIES)}
+                    className={`px-3 py-2 text-sm font-bold transition rounded-full flex items-center ${
+                       currentView === PublicView.FOR_UNIVERSITIES
+                         ? 'bg-white text-emerald-900 shadow-md' 
+                         : 'text-amber-400 hover:text-white hover:bg-emerald-800'
+                     }`}
+                 >
+                    <Building className="w-4 h-4 mr-1.5" />
+                    For Universities
+                 </button>
                  
                  <div className="h-6 w-px bg-emerald-700 mx-2"></div>
 
-                 <button onClick={() => onViewChange(PublicView.ADMIN_LOGIN)} className="p-2 hover:bg-emerald-800 rounded-full transition group" title="Admin Login">
-                    <Lock className="h-4 w-4 text-emerald-300 group-hover:text-white" />
+                 <button 
+                    onClick={() => onViewChange(PublicView.APPLY_ONLINE)}
+                    className="flex items-center bg-white text-orange-600 border-2 border-orange-500 hover:bg-orange-50 px-5 py-2 rounded-full font-bold shadow-sm transition transform hover:-translate-y-0.5 mr-2"
+                 >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Apply Online
                  </button>
 
                  <button 
                     onClick={() => onViewChange(PublicView.PORTAL_LOGIN)} 
-                    className="ml-2 flex items-center bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition transform hover:-translate-y-0.5"
+                    className="flex items-center bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition transform hover:-translate-y-0.5"
                  >
                     <User className="h-4 w-4 mr-2" />
                     Login
@@ -151,6 +168,14 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
       {mobileMenuOpen && !currentRole && (
         <div className="lg:hidden bg-emerald-800 border-t border-emerald-700 animate-slide-down shadow-2xl">
           <div className="px-4 pt-4 pb-6 space-y-2">
+             <button 
+               onClick={() => { onViewChange(PublicView.APPLY_ONLINE); setMobileMenuOpen(false); }}
+               className="block w-full text-center px-4 py-3 rounded-xl text-base font-bold bg-white text-orange-600 shadow-sm mb-4 active:scale-95 transition flex items-center justify-center border-2 border-orange-500"
+             >
+               <Sparkles className="w-5 h-5 mr-2" />
+               Apply Online
+             </button>
+
              {navItems.map((item) => (
                 <button
                   key={item.label}
@@ -160,18 +185,26 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
                   {item.label}
                 </button>
              ))}
+             
+             <button
+                onClick={() => { onViewChange(PublicView.FOR_UNIVERSITIES); setMobileMenuOpen(false); }}
+                className={`block w-full text-left px-4 py-3 rounded-xl text-base font-bold transition flex items-center ${currentView === PublicView.FOR_UNIVERSITIES ? 'bg-white text-emerald-900' : 'text-amber-400 hover:text-white hover:bg-emerald-700'}`}
+             >
+                <Building className="w-5 h-5 mr-3" />
+                For Universities
+             </button>
+
+             <button 
+                onClick={() => { onViewChange(PublicView.PORTAL_LOGIN); setMobileMenuOpen(false); }}
+                className="block w-full text-left px-4 py-3 rounded-xl text-base font-bold text-emerald-100 hover:text-white hover:bg-emerald-700"
+             >
+                Portal Login
+             </button>
              <button 
                 onClick={() => { onViewChange(PublicView.ADMIN_LOGIN); setMobileMenuOpen(false); }}
                 className="block w-full text-left px-4 py-3 rounded-xl text-base font-bold text-emerald-100 hover:text-white hover:bg-emerald-700"
              >
                 Admin Access
-             </button>
-             <button 
-               onClick={() => { onViewChange(PublicView.PORTAL_LOGIN); setMobileMenuOpen(false); }}
-               className="block w-full text-center px-4 py-4 rounded-xl text-base font-bold bg-orange-600 text-white shadow-lg mt-6 active:scale-95 transition flex items-center justify-center"
-             >
-               <User className="w-5 h-5 mr-2" />
-               Login
              </button>
           </div>
         </div>

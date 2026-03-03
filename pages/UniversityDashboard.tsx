@@ -5,8 +5,10 @@ import {
   User, LayoutDashboard, FileText, BarChart, Bell, Settings, 
   LogOut, Upload, Search, Download, AlertTriangle, Shield, 
   MessageSquare, Menu, X, Filter, ChevronRight, Briefcase, 
-  Globe, Megaphone, Target, Video, Phone, Star, MapPin, Clock
+  Globe, Megaphone, Target, Video, Phone, Star, MapPin, Clock,
+  Calendar
 } from 'lucide-react';
+import PaymentModal from '../components/PaymentModal';
 
 interface UniversityDashboardProps {
   onLogout: () => void;
@@ -61,8 +63,17 @@ const MARKETING_STRATEGIES = [
 ];
 
 const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) => {
-  const [currentView, setCurrentView] = useState<'overview' | 'students' | 'leads' | 'marketing' | 'settings'>('overview');
+  const [currentView, setCurrentView] = useState<'overview' | 'students' | 'leads' | 'marketing' | 'settings' | 'exhibition'>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Payment State
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentService, setPaymentService] = useState<{name: string, amount: number} | null>(null);
+
+  const handlePaymentSuccess = (tid: string) => {
+    setPaymentModalOpen(false);
+    alert(`Payment Successful! Transaction ID: ${tid}. Your exhibition slot is confirmed.`);
+  };
 
   const SidebarItem = ({ id, label, icon: Icon }: any) => (
     <button
@@ -100,6 +111,7 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
           <SidebarItem id="students" label="Student List" icon={Users} />
           <SidebarItem id="leads" label="Lead Management" icon={Filter} />
           <SidebarItem id="marketing" label="Marketing & Campaigns" icon={Megaphone} />
+          <SidebarItem id="exhibition" label="Exhibition Booking" icon={Calendar} />
           
           <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2">Admissions</p>
           <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition">
@@ -142,6 +154,7 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
               {currentView === 'students' && 'Enrolled & Active Students'}
               {currentView === 'leads' && 'Lead Management'}
               {currentView === 'marketing' && 'Marketing Hub'}
+              {currentView === 'exhibition' && 'Virtual Exhibition'}
             </h2>
           </div>
           <div className="flex items-center space-x-4">
@@ -353,8 +366,79 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
              </div>
           )}
 
+          {/* EXHIBITION VIEW */}
+          {currentView === 'exhibition' && (
+            <div className="animate-fade-in-up">
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl p-8 text-white mb-8 shadow-lg">
+                    <h2 className="text-3xl font-extrabold mb-2">Virtual Education Fair 2025</h2>
+                    <p className="text-purple-100 mb-6">Secure your booth for the biggest Zambian student recruitment event.</p>
+                    <div className="flex items-center space-x-4">
+                        <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm text-center">
+                            <p className="text-xs uppercase font-bold text-purple-200">Date</p>
+                            <p className="text-xl font-bold">15-20 Aug</p>
+                        </div>
+                        <div className="bg-white/20 p-4 rounded-xl backdrop-blur-sm text-center">
+                            <p className="text-xs uppercase font-bold text-purple-200">Expected</p>
+                            <p className="text-xl font-bold">5,000+ Students</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-xl transition relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-bl-xl">STANDARD</div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Silver Booth</h3>
+                        <p className="text-slate-500 text-sm mb-4">Standard listing + 1 Webinar slot.</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$500</p>
+                        <button 
+                            onClick={() => { setPaymentService({ name: 'Silver Booth Exhibition', amount: 500 * 25 }); setPaymentModalOpen(true); }} // Approx rate
+                            className="w-full bg-slate-100 text-slate-900 py-3 rounded-xl font-bold hover:bg-slate-200"
+                        >
+                            Book Silver
+                        </button>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl border-2 border-purple-500 shadow-xl transform scale-105 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">POPULAR</div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Gold Booth</h3>
+                        <p className="text-slate-500 text-sm mb-4">Featured listing + 3 Webinars + Email Blast.</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$1,200</p>
+                        <button 
+                            onClick={() => { setPaymentService({ name: 'Gold Booth Exhibition', amount: 1200 * 25 }); setPaymentModalOpen(true); }}
+                            className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 shadow-lg"
+                        >
+                            Book Gold
+                        </button>
+                    </div>
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-xl transition relative overflow-hidden">
+                        <div className="absolute top-0 right-0 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">EXCLUSIVE</div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Platinum Partner</h3>
+                        <p className="text-slate-500 text-sm mb-4">Homepage Takeover + Unlimited Webinars.</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$2,500</p>
+                        <button 
+                            onClick={() => { setPaymentService({ name: 'Platinum Exhibition', amount: 2500 * 25 }); setPaymentModalOpen(true); }}
+                            className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800"
+                        >
+                            Book Platinum
+                        </button>
+                    </div>
+                </div>
+            </div>
+          )}
+
         </div>
       </main>
+
+      {/* PAYMENT MODAL */}
+      <PaymentModal 
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        serviceName={paymentService?.name || ''}
+        amount={paymentService?.amount || 0}
+        currency="ZMW"
+        onSuccess={handlePaymentSuccess}
+        studentName={UNI_NAME}
+        studentId={UNI_ID}
+      />
     </div>
   );
 };

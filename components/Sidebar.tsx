@@ -1,9 +1,10 @@
+
 import React from 'react';
-import { AppPhase, UserRole } from '../types';
+import { AppPhase, UserRole, PublicView } from '../types';
 import { 
   CheckCircle, FileText, DollarSign, Plane, Home, GraduationCap, 
   Briefcase, Award, Book, Users, Shield, BarChart, Settings, Zap, 
-  Activity, Globe, MessageSquare, Map, X
+  Activity, Globe, MessageSquare, Map, X, Lock, LayoutDashboard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -12,14 +13,18 @@ interface SidebarProps {
   userRole: UserRole;
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: (view: PublicView) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentPhase, onPhaseChange, userRole, isOpen, onClose }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentPhase, onPhaseChange, userRole, isOpen, onClose, onNavigate }) => {
+  
+  // Define steps in logical order. 
+  // We use the mapping from DashboardFlow to determine "unlocked" status.
   const studentSteps = [
     { phase: AppPhase.MARKETING_LEAD, label: 'Start Here', icon: Book },
     { phase: AppPhase.APPLICATION_ENTRY, label: 'Application', icon: FileText },
-    // AI Selection phase removed
-    { phase: AppPhase.OFFER_MANAGEMENT, label: 'Offer Letter', icon: CheckCircle },
+    { phase: AppPhase.OFFER_MANAGEMENT, label: 'Waiting Room', icon: ClockIcon },
+    { phase: AppPhase.OFFER_LETTER, label: 'Offer Letter', icon: CheckCircle },
     { phase: AppPhase.PRE_DEPARTURE, label: 'Pre-Departure Guide', icon: Map },
     { phase: AppPhase.VISA_PROCESS, label: 'Visa Process', icon: Shield },
     { phase: AppPhase.TRAVEL_ARRIVAL, label: 'Travel', icon: Plane },
@@ -28,6 +33,29 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPhase, onPhaseChange, userRole
     { phase: AppPhase.GRADUATION, label: 'Graduation', icon: GraduationCap },
     { phase: AppPhase.EMPLOYMENT, label: 'Career Hub', icon: Briefcase },
   ];
+
+  // Helper to check if a step is accessible based on current phase
+  const isStepLocked = (stepPhase: AppPhase) => {
+    // Basic logic: You can't jump ahead. 
+    // We treat phase numbers as sequential for this simple check, 
+    // but handle the specific jump from 4 to 11 manually.
+    
+    if (stepPhase === AppPhase.MARKETING_LEAD) return false; // Always open
+    
+    // If current is 1, everything else locked
+    // Note: We already know stepPhase is not MARKETING_LEAD from the check above.
+    if (currentPhase === AppPhase.MARKETING_LEAD) return true;
+
+    // Standard progression check
+    // Special handling for Pre-Departure (11) which comes after Offer Letter (4)
+    if (stepPhase === AppPhase.PRE_DEPARTURE) return currentPhase < AppPhase.OFFER_LETTER;
+    
+    // General numeric check for others (assuming enum values somewhat align or we rely on exact state)
+    // For strictly linear flow: locked if stepPhase > currentPhase (with Pre-Depart exception)
+    if (currentPhase === AppPhase.PRE_DEPARTURE && stepPhase < AppPhase.PRE_DEPARTURE) return false; // Can go back
+    
+    return stepPhase > currentPhase; 
+  };
 
   // For Admin simulation, we keep the phase state but render different content
   const adminModules = [
@@ -81,23 +109,48 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPhase, onPhaseChange, userRole
                   </button>
                ))
             ) : (
-              studentSteps.map((step) => (
+              <>
                 <button
-                  key={step.phase}
                   onClick={() => {
-                    onPhaseChange(step.phase);
-                    onClose(); // Close on mobile selection
+                    if (onNavigate) {
+                      onNavigate(PublicView.FULL_DASHBOARD);
+                      onClose();
+                    }
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 lg:py-2 text-sm font-medium rounded-md transition-colors ${
-                    currentPhase === step.phase
-                      ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-700'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                  className="w-full flex items-center justify-between px-3 py-3 lg:py-2 text-sm font-medium rounded-md transition-colors text-gray-700 hover:bg-gray-50 mb-2"
                 >
-                  <step.icon className={`h-5 w-5 ${currentPhase === step.phase ? 'text-emerald-700' : 'text-gray-400'}`} />
-                  <span>{step.label}</span>
+                  <div className="flex items-center space-x-3">
+                    <LayoutDashboard className="h-5 w-5 text-gray-400" />
+                    <span>Full Dashboard</span>
+                  </div>
                 </button>
-              ))
+                {studentSteps.map((step) => {
+                  const locked = isStepLocked(step.phase);
+                  return (
+                    <button
+                      key={step.phase}
+                      disabled={locked}
+                      onClick={() => {
+                        if (!locked) {
+                          onPhaseChange(step.phase);
+                          onClose();
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-3 lg:py-2 text-sm font-medium rounded-md transition-colors ${
+                        currentPhase === step.phase
+                          ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-700'
+                          : locked ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <step.icon className={`h-5 w-5 ${currentPhase === step.phase ? 'text-emerald-700' : 'text-gray-400'}`} />
+                        <span>{step.label}</span>
+                      </div>
+                      {locked && <Lock className="w-3 h-3 text-slate-300" />}
+                    </button>
+                  );
+                })}
+              </>
             )}
           </div>
         </div>
@@ -119,5 +172,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPhase, onPhaseChange, userRole
     </>
   );
 };
+
+// Helper icon
+const ClockIcon = (props: any) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 
 export default Sidebar;

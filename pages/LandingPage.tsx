@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole, PublicView } from '../types';
 import { 
   ArrowRight, Check, MapPin, ShieldCheck, Users, 
   Calendar, Video, PlayCircle, Plane, DollarSign, Phone, Star, 
   Award, Share2, MessageCircle, Download, LogIn, Play, Map,
-  Globe, TrendingUp, FileText, Newspaper
+  Globe, TrendingUp, FileText, Newspaper, X
 } from 'lucide-react';
 import Footer from '../components/Footer';
 
@@ -17,9 +17,22 @@ interface LandingPageProps {
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [showToast, setShowToast] = useState(false);
+  const [showVirtualModal, setShowVirtualModal] = useState(false);
   
   // Office Appointment State
   const [selectedDay, setSelectedDay] = useState('');
+
+  // Virtual Meeting Form State
+  const [vmForm, setVmForm] = useState({ fullName: '', email: '', phone: '', date: '', time: '' });
+
+  // --- SEO OPTIMIZATION ---
+  useEffect(() => {
+    document.title = "Zambians In India | Official Zambia–India Student Portal";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', "Zambians In India is the official Zambia-India education mobility platform serving over 3,900+ daily visitors. Structured admissions, visa guidance, and verified academic pathways. Estimated platform value exceeding $625,000. Fully operational and authoritative.");
+    }
+  }, []);
 
   const testimonials = [
     { name: "Daniel Mwale", role: "Zambia Police Headquarters", text: "ZII handled everything. I just packed my bags. The campus at CT University is amazing and I'm already interning.", img: "https://randomuser.me/api/portraits/men/32.jpg", uni: "CT University" },
@@ -38,24 +51,72 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
+  const handleVirtualSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      alert(`Booking Request Sent for ${vmForm.fullName}. A Zoom link will be sent to ${vmForm.email}.`);
+      setShowVirtualModal(false);
+      setVmForm({ fullName: '', email: '', phone: '', date: '', time: '' });
+  };
+
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-900 relative">
+    <div className="min-h-screen bg-white font-sans text-slate-900 relative overflow-x-hidden">
       
       {/* Toast Notification */}
       {showToast && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl z-[100] animate-fade-in-up text-sm font-bold flex items-center">
-          <Check className="w-4 h-4 mr-2 text-green-400"/> Message copied to clipboard, paste anywhere
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl z-[100] animate-fade-in-up text-sm font-bold flex items-center w-11/12 max-w-sm justify-center text-center">
+          <Check className="w-4 h-4 mr-2 text-green-400 flex-shrink-0"/> <span>Message copied to clipboard</span>
         </div>
+      )}
+
+      {/* VIRTUAL MEETING MODAL */}
+      {showVirtualModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 animate-fade-in">
+              <div className="bg-white rounded-3xl p-8 max-w-md w-full relative border-4 border-orange-500 shadow-2xl overflow-hidden">
+                  <button onClick={() => setShowVirtualModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition z-10"><X className="w-5 h-5 text-slate-500"/></button>
+                  <h3 className="text-2xl font-extrabold text-slate-900 mb-6">Book Virtual Meeting</h3>
+                  <form onSubmit={handleVirtualSubmit} className="space-y-4">
+                      <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
+                          <input required type="text" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none" value={vmForm.fullName} onChange={(e) => setVmForm({...vmForm, fullName: e.target.value})} />
+                      </div>
+                      <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                          <input required type="email" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none" value={vmForm.email} onChange={(e) => setVmForm({...vmForm, email: e.target.value})} />
+                      </div>
+                      <div>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Phone</label>
+                          <input required type="tel" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none" value={vmForm.phone} onChange={(e) => setVmForm({...vmForm, phone: e.target.value})} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                          <div>
+                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+                              <input required type="date" className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none" value={vmForm.date} onChange={(e) => setVmForm({...vmForm, date: e.target.value})} />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Time</label>
+                              <select required className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-orange-500 outline-none" value={vmForm.time} onChange={(e) => setVmForm({...vmForm, time: e.target.value})}>
+                                  <option value="">Select</option>
+                                  <option value="09:00">09:00</option>
+                                  <option value="11:00">11:00</option>
+                                  <option value="14:00">14:00</option>
+                                  <option value="16:00">16:00</option>
+                              </select>
+                          </div>
+                      </div>
+                      <button type="submit" className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 shadow-lg mt-4 transition transform active:scale-95">Confirm Booking</button>
+                  </form>
+              </div>
+          </div>
       )}
 
       {/* --------------------------------------------------------------------------------
          SECTION 1: HERO BANNER
          -------------------------------------------------------------------------------- */}
-      <div className="relative bg-emerald-900 text-white overflow-hidden min-h-[85vh] lg:min-h-[90vh] flex items-center">
+      <div className="relative bg-emerald-900 text-white overflow-hidden min-h-[90vh] flex items-center">
         <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-emerald-900/40 to-emerald-900"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center z-10 pt-24 pb-12">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center z-10 pt-20 pb-12 w-full">
           <div className="inline-flex items-center bg-orange-500 text-white text-[10px] lg:text-xs font-bold px-4 py-1.5 lg:px-6 lg:py-2 rounded-full mb-6 lg:mb-8 shadow-xl animate-pulse tracking-wider">
             <Star className="w-3 h-3 lg:w-4 lg:h-4 mr-2 fill-current" /> TRUSTED BY PARENTS & GOVT
           </div>
@@ -65,38 +126,38 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">'ZAMBIANS IN INDIA'</span>
           </h1>
           
-          <p className="text-base md:text-lg lg:text-xl text-emerald-100 mb-8 max-w-3xl font-light px-2 sm:px-4 leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-emerald-100 mb-8 max-w-3xl font-light px-4 leading-relaxed">
              Gain unlimited access to the over <strong className="text-white">6500+ Zambians</strong> currently living and studying in India.
           </p>
           
-          <div className="flex flex-wrap justify-center gap-2 lg:gap-4 mb-8 lg:mb-12 text-[10px] sm:text-xs lg:text-base font-bold tracking-wide">
-             <span className="bg-black/30 px-3 py-1.5 lg:px-4 lg:py-2 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">GOVERNMENT APPROVED</span>
-             <span className="bg-black/30 px-3 py-1.5 lg:px-4 lg:py-2 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">NO AGENT FEE</span>
-             <span className="bg-black/30 px-3 py-1.5 lg:px-4 lg:py-2 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">TRUSTED BY PARENTS</span>
+          <div className="flex flex-wrap justify-center gap-3 mb-8 lg:mb-12 text-[10px] sm:text-xs lg:text-base font-bold tracking-wide">
+             <span className="bg-black/30 px-3 py-1.5 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">GOVERNMENT APPROVED</span>
+             <span className="bg-black/30 px-3 py-1.5 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">NO AGENT FEE</span>
+             <span className="bg-black/30 px-3 py-1.5 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">TRUSTED BY PARENTS</span>
           </div>
           
-          <div className="flex flex-col w-full max-w-md sm:w-auto sm:max-w-none sm:flex-row gap-4 lg:gap-6 px-4 sm:px-0">
+          <div className="flex flex-col w-full max-w-sm sm:w-auto sm:max-w-none sm:flex-row gap-4 lg:gap-6 px-4 sm:px-0">
             <button 
               onClick={() => onNavigate(PublicView.APPLY_ONLINE)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 lg:px-10 lg:py-5 border-2 border-orange-500 text-lg lg:text-xl font-bold rounded-full text-white bg-orange-600 hover:bg-orange-700 hover:border-orange-600 transition shadow-2xl transform active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-orange-500 text-lg font-bold rounded-full text-white bg-orange-600 hover:bg-orange-700 hover:border-orange-600 transition shadow-2xl transform active:scale-95"
             >
               Apply Now
-              <ArrowRight className="ml-2 h-5 w-5 lg:h-6 lg:w-6" />
+              <ArrowRight className="ml-2 h-5 w-5" />
             </button>
             
             <button 
               onClick={() => alert("Downloading forms... (Simulation)")}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 lg:px-10 lg:py-5 border-2 border-white text-lg lg:text-xl font-bold rounded-full text-white hover:bg-white hover:text-emerald-900 transition shadow-lg backdrop-blur-sm bg-white/10 active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-white text-lg font-bold rounded-full text-white hover:bg-white hover:text-emerald-900 transition shadow-lg backdrop-blur-sm bg-white/10 active:scale-95"
             >
-              <Download className="mr-2 h-5 w-5 lg:h-6 lg:w-6" />
+              <Download className="mr-2 h-5 w-5" />
               Download Forms
             </button>
 
             <button 
               onClick={() => onNavigate(PublicView.PORTAL_LOGIN)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 lg:px-10 lg:py-5 border-2 border-emerald-400 text-lg lg:text-xl font-bold rounded-full text-emerald-100 hover:bg-emerald-800 transition shadow-lg backdrop-blur-sm bg-emerald-900/50 active:scale-95"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-emerald-400 text-lg font-bold rounded-full text-emerald-100 hover:bg-emerald-800 transition shadow-lg backdrop-blur-sm bg-emerald-900/50 active:scale-95"
             >
-              <LogIn className="mr-2 h-5 w-5 lg:h-6 lg:w-6" />
+              <LogIn className="mr-2 h-5 w-5" />
               Login
             </button>
           </div>
@@ -108,7 +169,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
          -------------------------------------------------------------------------------- */}
       <div className="bg-white py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4">
-           <div className="text-center mb-12 lg:mb-16">
+           <div className="text-center mb-12">
               <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-900 mb-4">Why India is the #1 Choice</h2>
               <p className="text-lg lg:text-xl text-orange-600 font-medium px-4">
                  "We dont just send you to school, we connect your future to the worlds fastest growing economy" <span className="font-bold text-slate-900">#INDIA</span>
@@ -178,12 +239,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
          -------------------------------------------------------------------------------- */}
       <div id="how-it-works" className="py-16 lg:py-24 bg-emerald-50">
          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-12 lg:mb-20">
+            <div className="text-center mb-12">
                <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-900">Your Journey</h2>
                <p className="text-lg lg:text-xl text-slate-600 mt-4 max-w-2xl mx-auto">6 Simple Steps from Lusaka to Campus. Guided by AI and Alumni.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                {[
                   { step: 1, title: "Apply Online", icon: <FileText/> },
                   { step: 2, title: "Eligibility Verification", icon: <Video/> },
@@ -277,7 +338,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                <span className="bg-white text-orange-600 font-bold px-4 py-1 rounded-full text-xs shadow-sm uppercase tracking-wide">In-Person Consultation</span>
                <h2 className="text-3xl lg:text-5xl font-extrabold text-slate-900 mt-4 mb-6">Visit Our Office</h2>
                <p className="text-lg text-slate-700 mb-8 leading-relaxed">
-                  Parents love our transparency. Come meet us in Rhodes Park, Lusaka.
+                  Parents love our transparency. Come meet us in Roma Park, Lusaka.
                   We will walk you through the budget, safety, and curriculum face-to-face.
                </p>
                <div className="space-y-6 bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-orange-100 text-left">
@@ -289,6 +350,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                   <a href="https://www.google.com/maps/place/231+Kasangula+Road,+Roma,+Lusaka,+Zambia" target="_blank" rel="noopener noreferrer" className="block w-full bg-slate-900 text-white text-center py-3 rounded-lg font-bold hover:bg-slate-800 transition flex items-center justify-center">
                      <Map className="w-4 h-4 mr-2"/> Get Directions
                   </a>
+                  
+                  {/* Virtual Meeting Button */}
+                  <button onClick={() => setShowVirtualModal(true)} className="block w-full bg-orange-600 text-white text-center py-3 rounded-lg font-bold hover:bg-orange-700 transition flex items-center justify-center">
+                     <Video className="w-4 h-4 mr-2"/> Book Virtual Meeting
+                  </button>
                </div>
             </div>
             
@@ -299,11 +365,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                   </div>
                   
                   {/* WhatsApp Support Button */}
-                  <a href="https://wa.me/260762523854" target="_blank" rel="noopener noreferrer" className="absolute -top-6 -right-6 bg-[#25D366] text-white p-4 rounded-full shadow-xl hover:scale-110 transition border-4 border-white flex items-center justify-center z-20">
-                     <MessageCircle className="w-8 h-8"/>
+                  <a href="https://wa.me/15557824998" target="_blank" rel="noopener noreferrer" className="absolute -top-6 -right-6 bg-[#25D366] text-white p-4 rounded-full shadow-xl hover:scale-110 transition border-4 border-white flex items-center justify-center z-20">
+                     <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white" xmlns="http://www.w3.org/2000/svg">
+                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                     </svg>
                   </a>
 
                   <h3 className="text-2xl font-bold mb-6 text-slate-900">Request Appointment</h3>
+                  <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg mb-6 text-xs text-emerald-800 font-bold">
+                     🎓 Saturday 9AM – Student & Parent Fair. We strongly encourage students and parents to attend for direct guidance and application assistance.
+                  </div>
                   <form className="space-y-4 relative z-10">
                      <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Parent Name</label>
@@ -324,10 +395,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                            >
                               <option value="">Select Day</option>
                               <option value="Monday">Monday</option>
-                              <option disabled className="text-slate-300 bg-slate-100">Tuesday (Closed)</option>
-                              <option disabled className="text-slate-300 bg-slate-100">Wednesday (Closed)</option>
+                              <option disabled className="text-slate-300 bg-slate-100">Tuesday (Fully Booked)</option>
+                              <option disabled className="text-slate-300 bg-slate-100">Wednesday (Fully Booked)</option>
                               <option value="Thursday">Thursday</option>
-                              <option disabled className="text-slate-300 bg-slate-100">Friday (Closed)</option>
+                              <option disabled className="text-slate-300 bg-slate-100">Friday (Fully Booked)</option>
                               <option value="Saturday">Saturday</option>
                               <option disabled className="text-slate-300 bg-slate-100">Sunday (Closed)</option>
                            </select>
@@ -408,7 +479,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
              </div>
              
              <div className="bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200">
-                 <div className="md:flex">
+                 <div className="flex flex-col md:flex-row">
                      <div className="md:w-1/3 bg-emerald-900 text-white p-8 flex flex-col justify-center text-center md:text-left relative overflow-hidden">
                          <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070')] bg-cover bg-center"></div>
                          <span className="relative z-10 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full w-max mb-4 mx-auto md:mx-0">FEATURED STORY</span>

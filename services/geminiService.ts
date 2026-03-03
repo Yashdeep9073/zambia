@@ -90,7 +90,7 @@ export const chatWithConsultant = async (history: { role: string, parts: { text:
       model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: LISA_KNOWLEDGE_BASE,
-        temperature: 0.7,
+        temperature: 0.7, 
       },
       history: history
     });

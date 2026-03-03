@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { UserRole, PublicView } from '../types';
+import React, { useState, useEffect } from 'react';
+import { UserRole, PublicView, AppPhase } from '../types';
 import { 
   CheckCircle, FileText, ArrowRight, ShieldCheck, Plane, Download, 
   AlertTriangle, DollarSign, HelpCircle, ChevronDown, ChevronUp, 
@@ -9,6 +9,7 @@ import {
   AlertOctagon, Info, ArrowDown
 } from 'lucide-react';
 import Footer from '../components/Footer';
+import LifecycleTracker from '../components/LifecycleTracker';
 
 interface ApplyPageProps {
   onLogin: (role: UserRole) => void;
@@ -17,6 +18,15 @@ interface ApplyPageProps {
 
 const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
   const [activeFAQ, setActiveFAQ] = useState<number | null>(null);
+
+  // --- SEO OPTIMIZATION ---
+  useEffect(() => {
+    document.title = "Apply Online | 2025 Intake Application Form | Zambians In India";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', "Start your application for top Indian universities. Verified admissions for Zambian students. Apply now for scholarships and rapid visa processing.");
+    }
+  }, []);
 
   const toggleFAQ = (index: number) => {
     setActiveFAQ(activeFAQ === index ? null : index);
@@ -35,13 +45,13 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
   const SectionTitle = ({ title, subtitle }: { title: string, subtitle?: string }) => (
     <div className="text-center mb-10">
       <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">{title}</h2>
-      {subtitle && <p className="text-lg text-slate-600 max-w-2xl mx-auto">{subtitle}</p>}
+      {subtitle && <p className="text-lg text-slate-600 max-w-2xl mx-auto px-4">{subtitle}</p>}
       <div className="h-1 w-24 bg-orange-500 mx-auto mt-4 rounded-full"></div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden">
       
       {/* SECTION 1: REDESIGNED HERO */}
       <div className="bg-emerald-900 text-white pt-24 pb-16 relative overflow-hidden">
@@ -70,12 +80,19 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
         </div>
       </div>
 
+      {/* NEW: PROSPECTIVE STUDENT LIFECYCLE ROADMAP */}
+      <div className="bg-white py-12 border-b border-slate-200 sticky top-16 z-30 shadow-md">
+         <div className="max-w-7xl mx-auto px-4">
+            <LifecycleTracker currentPhase={AppPhase.MARKETING_LEAD} isProspective={true} />
+         </div>
+      </div>
+
       {/* SECTION 2: WHO SHOULD APPLY? */}
       <div className="py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4">
           <SectionTitle title="Who Should Apply Online?" subtitle="Our platform is designed for every Zambian dreamer." />
           
-          <div className="grid md:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
               { title: "All Grade 12 High School Leavers", desc: "Fresh out of school? Start your degree immediately.", icon: <BookOpen className="w-8 h-8"/>, highlight: true },
               { title: "Diploma Holders", desc: "Upgrade to a Bachelor's degree in less time.", icon: <Award className="w-8 h-8"/> },
@@ -95,54 +112,10 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
           <div className="bg-orange-600 border border-orange-700 rounded-2xl p-8 text-center max-w-4xl mx-auto shadow-2xl">
             <h3 className="font-bold text-2xl text-white mb-4 uppercase tracking-wider">We Understand Your Fears</h3>
             <div className="flex flex-wrap justify-center gap-4">
-              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Mistakes? We verify everything.</span>
-              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Scams? We are Govt Approved.</span>
-              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Costs? We find Scholarships.</span>
+              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition w-full md:w-auto justify-center"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Mistakes? We verify everything.</span>
+              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition w-full md:w-auto justify-center"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Scams? We are Govt Approved.</span>
+              <span className="px-5 py-3 bg-white rounded-full text-sm font-bold shadow-md text-slate-900 flex items-center transform hover:scale-105 transition w-full md:w-auto justify-center"><AlertTriangle className="w-5 h-5 mr-2 text-red-600"/> Fear of Costs? We find Scholarships.</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION 6: QUALITY CHECK GUIDE (UPDATED) */}
-      <div className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <SectionTitle title="Quality Check Guide" subtitle="Choose your preferred method to apply. All links redirect to the official portal." />
-          
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            
-            <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-2xl hover:border-emerald-500 transition shadow-sm hover:shadow-xl group">
-              <div className="bg-white p-4 rounded-full inline-block mb-6 shadow-md">
-                 <Monitor className="w-10 h-10 text-emerald-600 group-hover:scale-110 transition"/>
-              </div>
-              <h4 className="font-bold text-xl text-slate-900 mb-2">1. Use Desktop / Laptop</h4>
-              <p className="text-sm text-slate-600 mb-4">Visit any Internet café, business centre, school, or government office.</p>
-              <div className="bg-white p-3 rounded border border-slate-200 text-xs font-mono text-emerald-700 mb-4 break-all">
-                www.zambiansinindia.com/partners
-              </div>
-            </div>
-
-            <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-2xl hover:border-emerald-500 transition shadow-sm hover:shadow-xl group">
-              <div className="bg-white p-4 rounded-full inline-block mb-6 shadow-md">
-                 <Smartphone className="w-10 h-10 text-emerald-600 group-hover:scale-110 transition"/>
-              </div>
-              <h4 className="font-bold text-xl text-slate-900 mb-2">2. Use Your Smartphone</h4>
-              <p className="text-sm text-slate-600 mb-4">Apply directly using your mobile browser. Optimised for low bandwidth.</p>
-              <div className="bg-white p-3 rounded border border-slate-200 text-xs font-mono text-emerald-700 mb-4 break-all">
-                Direct Mobile Link
-              </div>
-            </div>
-
-            <div className="bg-slate-50 border-2 border-slate-200 p-8 rounded-2xl hover:border-emerald-500 transition shadow-sm hover:shadow-xl group">
-              <div className="bg-white p-4 rounded-full inline-block mb-6 shadow-md">
-                 <Store className="w-10 h-10 text-emerald-600 group-hover:scale-110 transition"/>
-              </div>
-              <h4 className="font-bold text-xl text-slate-900 mb-2">3. Mobile Money Booth</h4>
-              <p className="text-sm text-slate-600 mb-4">Visit any Airtel / MTN / Zamtel booth. Give the agent this link:</p>
-              <div className="bg-white p-3 rounded border border-slate-200 text-xs font-mono text-emerald-700 mb-4 break-all">
-                www.zambiansinindia.com/mmagent
-              </div>
-            </div>
-
           </div>
         </div>
       </div>
@@ -180,6 +153,15 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
               </div>
             ))}
           </div>
+
+          <div className="text-center mt-12">
+             <button 
+               onClick={startApplication}
+               className="bg-orange-600 text-white px-10 py-4 rounded-full font-bold text-xl hover:bg-orange-700 transition shadow-xl transform hover:scale-105"
+             >
+                Apply Now
+             </button>
+          </div>
         </div>
       </div>
 
@@ -210,7 +192,7 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
         <div className="max-w-5xl mx-auto px-4">
           <SectionTitle title="Document Requirements" subtitle="What you need RIGHT NOW to apply." />
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-8 rounded-2xl shadow-sm border-l-8 border-emerald-500">
               <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center"><FileText className="w-6 h-6 mr-3 text-emerald-600"/> 1. School Certificate</h3>
               <p className="text-slate-600 mb-4 text-sm">Full Grade 12 O’Level Certificate. The better your results, the higher your scholarship.</p>
@@ -244,6 +226,9 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
         <div className="max-w-4xl mx-auto px-4">
           <p className="text-lg font-bold text-orange-200 mb-2 uppercase tracking-wide">Now you are ready to begin your application</p>
           <h2 className="text-4xl md:text-6xl font-extrabold mb-8">Your Future Starts With One Application</h2>
+          <div className="bg-white/10 p-6 rounded-2xl mb-8 max-w-2xl mx-auto border border-white/20">
+             <p className="text-white font-medium">Please read this entire page carefully and proceed to the next section until completion to maximize your application success.</p>
+          </div>
           <div className="flex flex-col md:flex-row justify-center gap-6">
             <button onClick={startApplication} className="px-10 py-5 bg-white text-orange-700 rounded-full font-bold text-xl shadow-2xl hover:bg-slate-100 transition transform hover:scale-105">
               Start Here (Register)
@@ -264,7 +249,7 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
           <SectionTitle title="Frequently Asked Questions" />
           <div className="space-y-4">
             {[
-              { q: "Who can apply?", a: "To apply, click on the apply online button or click here. Simply register and complete the online application form." },
+              { q: "Who can apply?", a: "Any eligible student who has completed secondary education or is in their final year awaiting results may apply. We welcome local and international applicants who meet university admission requirements. Each application is reviewed individually by university professionals." },
               { q: "Is a passport required?", a: "To apply for any university we only need your Full grade 12 school certificate and NRC / Passport (optional). You will need a passport only after you have passed eligibility verification." },
               { q: "Can parents apply for me?", a: "Yes, we encourage parents to apply and make use of our parent login portal." },
               { q: "How long does the process take?", a: "We have simplified the process. With AI assistance, you will complete your entire application within 24hrs." },
@@ -297,6 +282,12 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
                 )}
               </div>
             ))}
+          </div>
+          
+          <div className="text-center mt-12">
+             <button onClick={startApplication} className="bg-emerald-700 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-emerald-800 transition transform hover:scale-105">
+                Apply Now
+             </button>
           </div>
         </div>
       </div>

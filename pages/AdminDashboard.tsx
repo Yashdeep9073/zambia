@@ -35,16 +35,16 @@ const METRICS_DATA = [
 ];
 
 const MOCK_STUDENTS = [
-  { id: 'ZII-2025-1001', name: 'John Phiri', uni: 'CT University', course: 'B.Tech CS', status: 'Offer Issued', date: '2025-01-15' },
-  { id: 'ZII-2025-1002', name: 'Mary Banda', uni: 'Lovely Professional', course: 'BBA', status: 'Visa Approved', date: '2025-01-12' },
-  { id: 'ZII-2025-1003', name: 'Peter Zulu', uni: 'Chandigarh University', course: 'MBA', status: 'Application Review', date: '2025-01-18' },
-  { id: 'ZII-2025-1004', name: 'Sarah Lungu', uni: 'CT University', course: 'B.Sc Nursing', status: 'Offer Accepted', date: '2025-01-10' },
-  { id: 'ZII-2025-1005', name: 'David Mumba', uni: 'Sharda University', course: 'Civil Eng', status: 'Rejected', date: '2025-01-05' },
-  { id: 'ZII-2025-1006', name: 'Grace Mulenga', uni: 'CT University', course: 'Pharmacy', status: 'Travelled', date: '2024-12-20' },
-  { id: 'ZII-2025-1007', name: 'Joseph Tembo', uni: 'Amity University', course: 'B.Com', status: 'Visa Pending', date: '2025-01-14' },
-  { id: 'ZII-2025-1008', name: 'Esther Sakala', uni: 'CT University', course: 'Medicine', status: 'Enrolled', date: '2024-08-15' },
-  { id: 'ZII-2025-1009', name: 'Brian Chanda', uni: 'SRM University', course: 'B.Arch', status: 'New', date: '2025-01-19' },
-  { id: 'ZII-2025-1010', name: 'Catherine Mwape', uni: 'CT University', course: 'Law', status: 'Scholarship Check', date: '2025-01-19' },
+  { id: 'ZII-2025-1001', name: 'John Phiri', uni: 'CT University', course: 'B.Tech CS', status: 'Offer Issued', date: '2025-01-15', engagement: 85, risk: 'Low', lastLogin: '2h ago' },
+  { id: 'ZII-2025-1002', name: 'Mary Banda', uni: 'Lovely Professional', course: 'BBA', status: 'Visa Approved', date: '2025-01-12', engagement: 92, risk: 'Low', lastLogin: '1d ago' },
+  { id: 'ZII-2025-1003', name: 'Peter Zulu', uni: 'Chandigarh University', course: 'MBA', status: 'Application Review', date: '2025-01-18', engagement: 45, risk: 'Medium', lastLogin: '5d ago' },
+  { id: 'ZII-2025-1004', name: 'Sarah Lungu', uni: 'CT University', course: 'B.Sc Nursing', status: 'Offer Accepted', date: '2025-01-10', engagement: 78, risk: 'Low', lastLogin: '3h ago' },
+  { id: 'ZII-2025-1005', name: 'David Mumba', uni: 'Sharda University', course: 'Civil Eng', status: 'Rejected', date: '2025-01-05', engagement: 12, risk: 'High', lastLogin: '2w ago' },
+  { id: 'ZII-2025-1006', name: 'Grace Mulenga', uni: 'CT University', course: 'Pharmacy', status: 'Travelled', date: '2024-12-20', engagement: 95, risk: 'Low', lastLogin: '1h ago' },
+  { id: 'ZII-2025-1007', name: 'Joseph Tembo', uni: 'Amity University', course: 'B.Com', status: 'Visa Pending', date: '2025-01-14', engagement: 60, risk: 'Medium', lastLogin: '3d ago' },
+  { id: 'ZII-2025-1008', name: 'Esther Sakala', uni: 'CT University', course: 'Medicine', status: 'Enrolled', date: '2024-08-15', engagement: 88, risk: 'Low', lastLogin: '4h ago' },
+  { id: 'ZII-2025-1009', name: 'Brian Chanda', uni: 'SRM University', course: 'B.Arch', status: 'New', date: '2025-01-19', engagement: 30, risk: 'High', lastLogin: 'Never' },
+  { id: 'ZII-2025-1010', name: 'Catherine Mwape', uni: 'CT University', course: 'Law', status: 'Scholarship Check', date: '2025-01-19', engagement: 70, risk: 'Low', lastLogin: '12h ago' },
 ];
 
 const SIDEBAR_SECTIONS = [
@@ -54,6 +54,10 @@ const SIDEBAR_SECTIONS = [
     { id: 'students', label: 'Student Management', icon: Users },
     { id: 'pipeline', label: 'Applications Pipeline', icon: Activity },
     { id: 'waiting_room', label: 'Waiting Room Monitor', icon: Clock },
+  ]},
+  { group: 'Financials', items: [
+    { id: 'revenue', label: 'Revenue & Cashflow', icon: DollarSign },
+    { id: 'forecast', label: 'Revenue Forecast', icon: TrendingUp },
   ]},
   { group: 'University & Offers', items: [
     { id: 'partners', label: 'Universities & Partners', icon: Database },
@@ -416,6 +420,31 @@ const StudentProfilePanel = ({ student, onClose }: { student: any, onClose: () =
                       <label className="text-xs font-bold text-slate-400 uppercase">Assigned Agent</label>
                       <p className="font-medium text-slate-800">System Auto-Assign</p>
                    </div>
+                   <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase">Engagement Score</label>
+                      <div className="flex items-center mt-1">
+                        <span className="font-bold text-slate-800 mr-2">{student.engagement || 0}/100</span>
+                        <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div className={`h-full ${student.engagement > 70 ? 'bg-green-500' : student.engagement > 40 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${student.engagement || 0}%` }}></div>
+                        </div>
+                      </div>
+                   </div>
+                   <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase">Dropout Risk</label>
+                      <div className="mt-1">
+                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                            student.risk === 'High' ? 'bg-red-100 text-red-600' : 
+                            student.risk === 'Medium' ? 'bg-orange-100 text-orange-600' : 
+                            'bg-green-100 text-green-600'
+                        }`}>
+                            {student.risk || 'Unknown'}
+                        </span>
+                      </div>
+                   </div>
+                   <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase">Last Login</label>
+                      <p className="font-medium text-slate-800">{student.lastLogin || 'N/A'}</p>
+                   </div>
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -436,6 +465,172 @@ const StudentProfilePanel = ({ student, onClose }: { student: any, onClose: () =
              </div>
           )}
        </div>
+    </div>
+  );
+};
+
+// --- REVENUE & FORECAST COMPONENTS ---
+
+const RevenuePanel = () => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('zii_transactions');
+    if (saved) {
+      setTransactions(JSON.parse(saved));
+    } else {
+      // Add some mock data if empty
+      const mocks = [
+        { id: 'ZYN-1001', studentName: 'John Phiri', service: 'Application Fee', amount: 150, currency: 'ZMW', date: '2025-01-15', status: 'Success' },
+        { id: 'ZYN-1002', studentName: 'Mary Banda', service: 'Visa Assist', amount: 250, currency: 'ZMW', date: '2025-01-16', status: 'Success' },
+        { id: 'ZYN-1003', studentName: 'Peter Zulu', service: 'Premium Fast Track', amount: 750, currency: 'ZMW', date: '2025-01-18', status: 'Success' },
+      ];
+      setTransactions(mocks);
+    }
+  }, []);
+
+  const totalRevenue = transactions.reduce((acc, curr) => acc + curr.amount, 0);
+  
+  // Group by service for "Category" chart
+  const byCategory = transactions.reduce((acc: any, curr) => {
+    acc[curr.service] = (acc[curr.service] || 0) + curr.amount;
+    return acc;
+  }, {});
+
+  const maxCat = Math.max(...Object.values(byCategory).map((v: any) => v), 1);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Total Revenue (YTD)</h3>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW {totalRevenue.toLocaleString()}</div>
+          <div className="text-xs text-green-600 font-bold mt-1 flex items-center"><TrendingUp className="w-3 h-3 mr-1"/> +12% vs last month</div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Pending Payments</h3>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW 4,250</div>
+          <div className="text-xs text-orange-500 font-bold mt-1">7 invoices outstanding</div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Avg. Transaction</h3>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW 320</div>
+          <div className="text-xs text-slate-400 font-bold mt-1">Based on {transactions.length} transactions</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Transactions */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-4">Recent Transactions</h3>
+          <div className="overflow-y-auto max-h-80 space-y-3">
+            {transactions.map((tx, i) => (
+              <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-100 transition">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                    <DollarSign className="w-5 h-5"/>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{tx.studentName}</p>
+                    <p className="text-xs text-slate-500">{tx.service} • {tx.date}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-slate-900">+{tx.currency} {tx.amount.toLocaleString()}</p>
+                  <p className="text-[10px] uppercase font-bold text-green-600">{tx.status}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Revenue by Category */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-6">Revenue by Service</h3>
+          <div className="space-y-4">
+            {Object.entries(byCategory).map(([cat, amount]: [string, any]) => (
+              <div key={cat}>
+                <div className="flex justify-between text-xs font-bold mb-1">
+                  <span className="text-slate-600">{cat}</span>
+                  <span className="text-slate-900">ZMW {amount.toLocaleString()}</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${(amount / maxCat) * 100}%` }}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ForecastPanel = () => {
+  const [conversionRate, setConversionRate] = useState(15);
+  const [traffic, setTraffic] = useState(5000);
+  const [avgValue, setAvgValue] = useState(350);
+
+  const projectedRevenue = (traffic * (conversionRate / 100)) * avgValue;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 animate-fade-in">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-slate-900">Revenue Forecast Simulator</h2>
+        <p className="text-slate-500">Project future earnings based on adjustable variables.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="space-y-8">
+          <div>
+            <label className="flex justify-between text-sm font-bold text-slate-700 mb-2">
+              <span>Monthly Traffic</span>
+              <span className="text-blue-600">{traffic.toLocaleString()} visitors</span>
+            </label>
+            <input 
+              type="range" min="1000" max="50000" step="1000" 
+              value={traffic} onChange={(e) => setTraffic(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+          </div>
+
+          <div>
+            <label className="flex justify-between text-sm font-bold text-slate-700 mb-2">
+              <span>Conversion Rate (Paid)</span>
+              <span className="text-green-600">{conversionRate}%</span>
+            </label>
+            <input 
+              type="range" min="1" max="50" step="1" 
+              value={conversionRate} onChange={(e) => setConversionRate(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+            />
+          </div>
+
+          <div>
+            <label className="flex justify-between text-sm font-bold text-slate-700 mb-2">
+              <span>Avg. Transaction Value</span>
+              <span className="text-orange-600">ZMW {avgValue}</span>
+            </label>
+            <input 
+              type="range" min="50" max="2000" step="50" 
+              value={avgValue} onChange={(e) => setAvgValue(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-600"
+            />
+          </div>
+        </div>
+
+        <div className="bg-slate-900 text-white p-8 rounded-2xl flex flex-col justify-center items-center text-center relative overflow-hidden">
+           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+           <p className="text-slate-400 font-bold uppercase tracking-widest mb-2 relative z-10">Projected Monthly Revenue</p>
+           <h3 className="text-5xl font-extrabold text-green-400 mb-4 relative z-10">ZMW {projectedRevenue.toLocaleString()}</h3>
+           <p className="text-sm text-slate-400 relative z-10">
+             Based on {traffic.toLocaleString()} visitors converting at {conversionRate}%.
+           </p>
+           <button className="mt-8 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition relative z-10">
+             Export Report
+           </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -585,6 +780,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
          <div className="flex-1 overflow-auto p-4 lg:p-8">
             {activeView === 'dashboard' ? renderDashboardGrid() : 
              activeView === 'integrations' ? <IntegrationsPanel /> : 
+             activeView === 'revenue' ? <RevenuePanel /> :
+             activeView === 'forecast' ? <ForecastPanel /> :
              activeView === 'detail' ? renderDetailView() : 
              <div className="text-center text-slate-400 py-20 font-bold">Module Under Development</div>}
          </div>

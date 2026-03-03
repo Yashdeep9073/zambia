@@ -94,8 +94,8 @@ const ChatBot: React.FC = () => {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 group cursor-pointer animate-fade-in-up"
-        title="Students Office (Speak to Mr Mwale)"
+        className="hidden lg:flex items-center gap-2 group cursor-pointer animate-fade-in-up"
+        title="Student Affairs Office"
       >
         <div className="bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-2xl transition transform hover:scale-110 flex items-center justify-center relative border-4 border-white">
             <School className="w-6 h-6" />
@@ -109,7 +109,7 @@ const ChatBot: React.FC = () => {
   }
 
   return (
-    <div className={`fixed z-50 transition-all duration-300 ease-in-out shadow-2xl overflow-hidden font-sans flex flex-col
+    <div className={`fixed z-[60] transition-all duration-300 ease-in-out shadow-2xl overflow-hidden font-sans flex flex-col
       ${isMinimized 
         ? 'bottom-24 right-6 w-72 h-14 rounded-full bg-emerald-900 cursor-pointer' 
         : 'bottom-0 right-0 w-full h-full md:bottom-6 md:right-6 md:w-96 md:h-[550px] md:rounded-2xl bg-white border border-slate-200'
@@ -128,7 +128,7 @@ const ChatBot: React.FC = () => {
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-emerald-900 rounded-full"></div>
           </div>
           <div>
-            <h3 className="font-bold text-sm">Chat with Mr Mwale</h3>
+            <h3 className="font-bold text-sm">Student Affairs Office</h3>
             {!isMinimized && <p className="text-[10px] text-emerald-200 flex items-center">Official Support • Online</p>}
           </div>
         </div>

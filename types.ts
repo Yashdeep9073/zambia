@@ -13,13 +13,13 @@ export enum AppPhase {
   APPLICATION_ENTRY = 2,
   OFFER_MANAGEMENT = 3, // Waiting Room
   OFFER_LETTER = 4,     // New Offer Letter Page
-  VISA_PROCESS = 5,
-  TRAVEL_ARRIVAL = 6,
-  SETTLEMENT = 7,
-  COMMUNITY = 8,
-  GRADUATION = 9,
-  EMPLOYMENT = 10,
-  PRE_DEPARTURE = 11,
+  PRE_DEPARTURE = 5,    // Moved to match flow
+  VISA_PROCESS = 6,
+  TRAVEL_ARRIVAL = 7,
+  SETTLEMENT = 8,
+  COMMUNITY = 9,
+  GRADUATION = 10,
+  EMPLOYMENT = 11,
   
   // Legacy / Unused phases kept for compatibility if needed
   AUTO_ASSESSMENT = 90,
@@ -42,12 +42,33 @@ export enum PublicView {
   SEARCH = 'SEARCH',
   CONTACT = 'CONTACT',
   APPLY_ONLINE = 'APPLY_ONLINE',
+  FOR_UNIVERSITIES = 'FOR_UNIVERSITIES', 
   JOURNEY_APPLY = 'JOURNEY_APPLY',
   JOURNEY_INTERVIEW = 'JOURNEY_INTERVIEW',
   JOURNEY_OFFER = 'JOURNEY_OFFER',
   JOURNEY_ACCEPTANCE = 'JOURNEY_ACCEPTANCE',
   JOURNEY_VISA = 'JOURNEY_VISA',
-  JOURNEY_FLY = 'JOURNEY_FLY'
+  JOURNEY_FLY = 'JOURNEY_FLY',
+  // New Legal & Trust Pages
+  LEGAL_STATUS = 'LEGAL_STATUS',
+  PARTNER_UNIVERSITIES = 'PARTNER_UNIVERSITIES',
+  VISA_DISCLAIMER = 'VISA_DISCLAIMER',
+  PRIVACY_POLICY = 'PRIVACY_POLICY',
+  TERMS_CONDITIONS = 'TERMS_CONDITIONS',
+  CORPORATE_PROFILE = 'CORPORATE_PROFILE',
+  SCHOLARSHIP_EXAM = 'SCHOLARSHIP_EXAM',
+  FULL_DASHBOARD = 'FULL_DASHBOARD'
+}
+
+export interface PaymentTransaction {
+  id: string;
+  studentId?: string;
+  service: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  date: string;
+  method?: string;
 }
 
 export interface University {
@@ -99,9 +120,49 @@ export interface StudentProfile {
   // Additional fields
   prevIntlExposure?: string;
   englishProficiency?: string;
-  emergencyContact?: string;
+  emergencyContact?: string; // Deprecated, use nextOfKin
   discoverySource?: string;
   commitmentConfirmed?: boolean;
+  
+  // New Next of Kin Structure (Section 1.7)
+  nextOfKin?: {
+    fullName: string;
+    relationship: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
+
+  // Parent / Guardian Structure (Enhanced)
+  parents?: Array<{
+    fullName: string;
+    relationship: string;
+    phone: string;
+    email?: string;
+    occupation?: string;
+  }>;
+
+  // Location & Travel
+  country?: string;
+  province?: string;
+  town?: string;
+  travelledAbroad?: 'Yes' | 'No';
+  travelledCountries?: string;
+
+  // New Highest Qualification Structure (Section 1.2)
+  highestQualification?: {
+    level: 'Grade 12' | 'Diploma' | 'Degree' | 'Other';
+    title: string;
+    institution: string;
+    year: string;
+    country: string;
+    grade: string;
+  };
+
+  // Share Engine (Section 1.8)
+  shareCount?: number;
+  isShareVerified?: boolean;
+
   academicHistory?: {
       institutions: Array<{
         name: string;
@@ -112,6 +173,12 @@ export interface StudentProfile {
   };
   recommenderName?: string;
   recommenderPhone?: string;
+
+  // Gamification & Dashboard State
+  points?: number;
+  badges?: string[];
+  lastActiveSection?: string;
+  lifecycleProgress?: number;
 }
 
 export interface ChatMessage {
@@ -119,6 +186,29 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+}
+
+// --- DATABASE SCHEMA DEFINITIONS ---
+
+export interface SupportTicket {
+  id: string;
+  student_id?: string;
+  department: 'Student Applications' | 'University Onboarding' | 'Technical Support' | 'Student Affairs';
+  category: string;
+  description: string;
+  attachment_url?: string;
+  status: 'Open' | 'In Progress' | 'Resolved';
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  created_at: string;
+}
+
+export interface AiTrainingData {
+  id: string;
+  category: string;
+  question_pattern: string;
+  approved_response: string;
+  escalation_trigger: boolean;
+  updated_at: string;
 }
 
 // --- MASTER API INTEGRATION SCHEMAS ---

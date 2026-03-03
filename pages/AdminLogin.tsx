@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PublicView, UserRole } from '../types';
 import { Shield, Lock, AlertTriangle, ChevronRight, User } from 'lucide-react';
@@ -133,12 +134,6 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onNavigate }) => {
             >
               {loading ? 'Authenticating...' : 'Access Dashboard'}
             </button>
-            
-            <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
-               <p className="text-xs text-slate-400 font-bold uppercase mb-1">Demo Credentials</p>
-               <p className="text-sm font-mono text-slate-600">Username: admin</p>
-               <p className="text-sm font-mono text-slate-600">Password: 12345</p>
-            </div>
           </form>
         </div>
       </div>
