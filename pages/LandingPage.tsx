@@ -5,7 +5,7 @@ import {
   ArrowRight, Check, MapPin, ShieldCheck, Users, 
   Calendar, Video, PlayCircle, Plane, DollarSign, Phone, Star, 
   Award, Share2, MessageCircle, Download, LogIn, Play, Map,
-  Globe, TrendingUp, FileText, Newspaper, X
+  Globe, TrendingUp, FileText, Newspaper, X, HeartPulse, Briefcase, ShoppingBag, Search
 } from 'lucide-react';
 import Footer from '../components/Footer';
 
@@ -25,6 +25,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
   // Virtual Meeting Form State
   const [vmForm, setVmForm] = useState({ fullName: '', email: '', phone: '', date: '', time: '' });
 
+  // Scholarship Countdown State
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const targetDate = new Date('March 30, 2026 23:59:59').getTime();
+    
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+      
+      if (distance < 0) {
+        clearInterval(interval);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      } else {
+        setTimeLeft({
+          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((distance % (1000 * 60)) / 1000)
+        });
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   // --- SEO OPTIMIZATION ---
   useEffect(() => {
     document.title = "Zambians In India | Official Zambia–India Student Portal";
@@ -35,9 +61,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
   }, []);
 
   const testimonials = [
-    { name: "Daniel Mwale", role: "Zambia Police Headquarters", text: "ZII handled everything. I just packed my bags. The campus at CT University is amazing and I'm already interning.", img: "https://randomuser.me/api/portraits/men/32.jpg", uni: "CT University" },
-    { name: "Micheal Matambo", role: "Zambia Airforce", text: "The community support is real. I found my roommate through the portal before even flying.", img: "https://randomuser.me/api/portraits/men/45.jpg", uni: "CT University" },
-    { name: "Yvette Mbewe", role: "Mandela Washington Fellow - USA", text: "My parents were worried, but the parent portal kept them updated every week. Best decision ever.", img: "https://randomuser.me/api/portraits/women/44.jpg", uni: "Lovely Professional University" }
+    { name: "Daniel Mwale", role: "Zambia Police Headquarters", text: "ZII handled everything. I just packed my bags. The campus at CT University is amazing and I'm already interning.", img: "https://drive.google.com/uc?export=view&id=1IOLUGGBeP5qRg_EtL1yWIt4JRdM5_klU", uni: "CT University" },
+    { name: "Micheal Matambo", role: "Zambia Airforce", text: "The community support is real. I found my roommate through the portal before even flying.", img: "https://drive.google.com/uc?export=view&id=11vPjBomfit6RW5mqkPRKlRhVItxWCpPM", uni: "CT University" },
+    { name: "Yvette Mbewe", role: "Mandela Washington Fellow - USA", text: "My parents were worried, but the parent portal kept them updated every week. Best decision ever.", img: "https://drive.google.com/uc?export=view&id=1dTKLKVzr16pKybLSt3OFZK8i3CiEj8dI", uni: "Lovely Professional University" }
   ];
 
   const handleCopyLink = () => {
@@ -113,8 +139,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
          SECTION 1: HERO BANNER
          -------------------------------------------------------------------------------- */}
       <div className="relative bg-emerald-900 text-white overflow-hidden min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-emerald-900/40 to-emerald-900"></div>
+        <div className="absolute inset-0 overflow-hidden">
+          <img 
+            src="https://drive.google.com/uc?export=view&id=1xzMu5PxcslMeIeiVE_yHJxIk-LYjEkHM" 
+            alt="Hero Background" 
+            className="w-full h-full object-cover object-center"
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070'; e.currentTarget.onerror = null; }}
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"></div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center z-10 pt-20 pb-12 w-full">
           <div className="inline-flex items-center bg-orange-500 text-white text-[10px] lg:text-xs font-bold px-4 py-1.5 lg:px-6 lg:py-2 rounded-full mb-6 lg:mb-8 shadow-xl animate-pulse tracking-wider">
@@ -136,7 +171,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
              <span className="bg-black/30 px-3 py-1.5 rounded backdrop-blur-sm border border-white/20 whitespace-nowrap">TRUSTED BY PARENTS</span>
           </div>
           
-          <div className="flex flex-col w-full max-w-sm sm:w-auto sm:max-w-none sm:flex-row gap-4 lg:gap-6 px-4 sm:px-0">
+          <div className="flex flex-col w-full max-w-sm sm:w-auto sm:max-w-none sm:flex-row gap-4 lg:gap-6 px-4 sm:px-0 mb-12">
             <button 
               onClick={() => onNavigate(PublicView.APPLY_ONLINE)}
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 border-2 border-orange-500 text-lg font-bold rounded-full text-white bg-orange-600 hover:bg-orange-700 hover:border-orange-600 transition shadow-2xl transform active:scale-95"
@@ -161,6 +196,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
               Login
             </button>
           </div>
+
+          {/* 3D Glassmorphism Search Bar */}
+          <div className="w-full max-w-4xl mx-auto px-4 animate-fade-in-up">
+            <form 
+              onSubmit={(e) => { e.preventDefault(); onNavigate(PublicView.SEARCH_RESULTS); }}
+              className="relative flex items-center w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-[40px] p-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] hover:shadow-[0_8px_32px_0_rgba(255,165,0,0.2)] transition-shadow duration-300"
+            >
+              <div className="pl-4 pr-2">
+                <Search className="w-8 h-8 text-orange-400 drop-shadow-md" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search courses, scholarships, medical, jobs, invest, tourism..." 
+                className="w-full bg-transparent text-white placeholder-slate-300 text-lg px-4 py-4 focus:outline-none"
+              />
+              <button 
+                type="submit" 
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transition transform active:scale-95 hidden sm:block"
+              >
+                Search
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -178,14 +236,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
 
            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 text-center">
               {[
-                { title: "World-Class Education", icon: <Award className="w-8 h-8 lg:w-10 lg:h-10 text-white"/>, desc: "Globally accredited degrees recognized by ZAQA." },
-                { title: "Cheaper than Zambia", icon: <DollarSign className="w-8 h-8 lg:w-10 lg:h-10 text-white"/>, desc: "Tuition & living costs lower than private local unis." },
-                { title: "Global Connection", icon: <Globe className="w-8 h-8 lg:w-10 lg:h-10 text-white"/>, desc: "Network with students from 50+ countries." },
-                { title: "Top Scholarships", icon: <Star className="w-8 h-8 lg:w-10 lg:h-10 text-white"/>, desc: "Access to Top Scholarships & Financial Aid." },
-                { title: "High Career Ops", icon: <TrendingUp className="w-8 h-8 lg:w-10 lg:h-10 text-white"/>, desc: "High Career & Internship Opportunities." },
+                { title: "World-Class Education", icon: "https://img.icons8.com/3d-fluency/94/graduation-cap.png", desc: "Globally accredited degrees recognized by ZAQA." },
+                { title: "Cheaper than Zambia", icon: "https://img.icons8.com/3d-fluency/94/money-bag.png", desc: "Tuition & living costs lower than private local unis." },
+                { title: "Global Connection", icon: "https://img.icons8.com/3d-fluency/94/globe.png", desc: "Network with students from 50+ countries." },
+                { title: "Top Scholarships", icon: "https://img.icons8.com/3d-fluency/94/star.png", desc: "Access to Top Scholarships & Financial Aid." },
+                { title: "High Career Ops", icon: "https://img.icons8.com/3d-fluency/94/briefcase.png", desc: "High Career & Internship Opportunities." },
               ].map((item, i) => (
                 <div key={i} className="p-6 lg:p-8 bg-slate-50 rounded-2xl hover:shadow-2xl transition border border-slate-100 group hover:-translate-y-2 duration-300">
-                   <div className="bg-emerald-600 p-4 rounded-2xl inline-block mb-4 lg:mb-6 shadow-lg group-hover:bg-orange-500 transition">{item.icon}</div>
+                   <div className="p-4 rounded-2xl inline-block mb-4 lg:mb-6 transition transform group-hover:rotate-12 duration-500">
+                      <img 
+                        src={item.icon} 
+                        alt={item.title} 
+                        className="w-16 h-16 lg:w-20 lg:h-20 drop-shadow-2xl" 
+                        loading="lazy" 
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                        onError={(e) => { e.currentTarget.src = '/assets/fallback-image.png'; e.currentTarget.onerror = null; }}
+                      />
+                   </div>
                    <h3 className="font-bold text-lg mb-3 text-slate-900">{item.title}</h3>
                    <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
                 </div>
@@ -220,15 +288,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                   </div>
                </div>
             </div>
-            <div className="md:w-1/2 relative w-full px-4">
-               <div className="absolute inset-0 bg-orange-500 rounded-3xl transform rotate-6 opacity-20 hidden md:block"></div>
-               <div className="bg-white text-slate-900 p-6 lg:p-10 rounded-3xl shadow-2xl relative z-10">
-                  <div className="border-4 border-dashed border-emerald-900 p-6 lg:p-8 h-64 lg:h-80 flex flex-col items-center justify-center text-center bg-slate-50">
-                     <ShieldCheck className="w-16 h-16 lg:w-24 lg:h-24 text-emerald-900 mb-4 lg:mb-6" />
-                     <h3 className="font-serif text-xl lg:text-3xl font-bold text-emerald-900">CERTIFICATE OF RECOGNITION</h3>
-                     <p className="text-sm lg:text-base mt-2 lg:mt-4 font-medium text-slate-600">Endorsed by India-Zambia Education Council</p>
-                     <div className="mt-4 lg:mt-6 w-24 lg:w-32 h-1 bg-orange-500"></div>
-                  </div>
+            <div className="md:w-1/2 relative w-full px-4 mt-12 md:mt-0">
+               <div className="absolute inset-0 bg-orange-500 rounded-3xl transform rotate-3 opacity-20 hidden md:block"></div>
+               <div className="relative z-10 rounded-3xl overflow-hidden shadow-[0_0_30px_rgba(255,165,0,0.3)] border-4 border-white/10 bg-slate-800">
+                  <img 
+                    src="https://drive.google.com/uc?export=view&id=1jIP0rDFr_xsoBdOSRiW5A6r3zEqFvOv0" 
+                    alt="The ZII Advantage" 
+                    className="w-full h-auto object-contain hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070'; e.currentTarget.onerror = null; }}
+                  />
                </div>
             </div>
          </div>
@@ -246,12 +317,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                {[
-                  { step: 1, title: "Apply Online", icon: <FileText/> },
-                  { step: 2, title: "Eligibility Verification", icon: <Video/> },
-                  { step: 3, title: "Offer Letter", icon: <Award/> },
-                  { step: 4, title: "Acceptance", icon: <Check/> },
-                  { step: 5, title: "VISA", icon: <FileText/> },
-                  { step: 6, title: "Fly to India", icon: <Plane/> },
+                  { step: 1, title: "Apply Online", iconUrl: "/assets/journey-icons/1-apply.webp", alt: "Ultra realistic 3D laptop displaying application form with futuristic UI hologram effect and Zambia-India subtle flags" },
+                  { step: 2, title: "Eligibility Verification", iconUrl: "/assets/journey-icons/2-eligibility.webp", alt: "3D document with green verified checkmark and digital scanning light effect" },
+                  { step: 3, title: "Offer Letter", iconUrl: "/assets/journey-icons/3-offer.webp", alt: "Official envelope opening with university crest glowing and premium academic gold seal" },
+                  { step: 4, title: "Acceptance", iconUrl: "/assets/journey-icons/4-acceptance.webp", alt: "Certificate glowing with bold 100% Scholarship seal, gold embossed medal, and academic ribbon" },
+                  { step: 5, title: "VISA", iconUrl: "/assets/journey-icons/5-visa.webp", alt: "Passport open with stamped visa and holographic approval glow" },
+                  { step: 6, title: "Fly to India", iconUrl: "/assets/journey-icons/6-fly.webp", alt: "Ultra realistic 3D airplane mid-air with motion trail and globe beneath" },
                ].map((s) => (
                   <button 
                      key={s.step} 
@@ -259,8 +330,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
                      className="bg-white p-8 lg:p-10 rounded-3xl shadow-lg hover:shadow-2xl transition flex flex-col items-center text-center group border border-emerald-100 hover:border-orange-500 relative overflow-hidden active:scale-95"
                   >
                      <div className="absolute top-0 right-0 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-bl-xl">STEP {s.step}</div>
-                     <div className="bg-emerald-50 text-emerald-700 w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center mb-4 lg:mb-6 group-hover:bg-orange-500 group-hover:text-white transition duration-300 shadow-inner">
-                        <div className="scale-125 lg:scale-150">{s.icon}</div>
+                     <div className="w-24 h-24 lg:w-32 lg:h-32 flex items-center justify-center mb-4 lg:mb-6 transition duration-500 relative group-hover:scale-110 group-hover:-translate-y-2">
+                        <img 
+                           src={s.iconUrl} 
+                           alt={s.alt} 
+                           loading="lazy" 
+                           className="w-full h-full object-contain drop-shadow-2xl"
+                           onError={(e) => { e.currentTarget.src = 'https://img.icons8.com/3d-fluency/256/star.png'; e.currentTarget.onerror = null; }}
+                        />
                      </div>
                      <h3 className="text-xl lg:text-2xl font-bold mb-3 text-slate-800">{s.title}</h3>
                      <p className="text-sm text-slate-500 mb-6">Click to access resources & AI guide</p>
@@ -306,21 +383,32 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                {testimonials.map((t, i) => (
-                  <div key={i} className="bg-slate-800 rounded-3xl p-8 border border-slate-700 hover:border-orange-500 transition relative group mt-6 md:mt-0">
-                     <div className="absolute -top-6 left-8">
-                        <div className="w-16 h-16 rounded-full border-4 border-slate-800 overflow-hidden shadow-lg">
-                           <img src={t.img} alt={t.name} className="w-full h-full object-cover" />
+                  <div key={i} className="bg-slate-800 rounded-3xl p-8 border border-slate-700 hover:border-orange-500 transition relative group mt-12 md:mt-0 flex flex-col h-full">
+                     <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 md:left-8 md:translate-x-0">
+                        <div className="w-24 h-24 rounded-full border-4 border-slate-800 overflow-hidden shadow-[0_0_15px_rgba(255,165,0,0.5)] group-hover:shadow-[0_0_25px_rgba(255,165,0,0.8)] transition-all duration-300 group-hover:scale-110">
+                           <img 
+                             src={t.img} 
+                             alt={t.name} 
+                             className="w-full h-full object-cover" 
+                             loading="lazy" 
+                             referrerPolicy="no-referrer"
+                             crossOrigin="anonymous"
+                             onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&background=random`; e.currentTarget.onerror = null; }}
+                           />
                         </div>
                      </div>
-                     <div className="mt-8">
-                        <div className="flex text-orange-500 mb-4">
+                     <div className="mt-12 flex-grow flex flex-col">
+                        <div className="flex text-orange-500 mb-4 justify-center md:justify-start">
                            {[...Array(5)].map((_, j) => <Star key={j} className="w-4 h-4 fill-current" />)}
                         </div>
-                        <p className="text-slate-300 italic mb-6 leading-relaxed">"{t.text}"</p>
-                        <div className="border-t border-slate-700 pt-4">
+                        <p className="text-slate-300 italic mb-6 leading-relaxed text-center md:text-left flex-grow">"{t.text}"</p>
+                        <div className="border-t border-slate-700 pt-4 text-center md:text-left">
                            <p className="font-bold text-lg text-white">{t.name}</p>
                            <p className="text-xs text-emerald-400 uppercase font-bold tracking-wider">{t.role}</p>
-                           <p className="text-xs text-slate-500">{t.uni}</p>
+                           <p className="text-xs text-slate-500 mb-4">{t.uni}</p>
+                           <button className="w-full py-2 bg-slate-700 hover:bg-orange-500 text-white rounded-xl font-bold transition-colors text-sm">
+                              View Full Story
+                           </button>
                         </div>
                      </div>
                   </div>
@@ -450,21 +538,109 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
       </div>
 
       {/* --------------------------------------------------------------------------------
-         SECTION 9: VIRTUAL CAMPUS TEASER
+         SECTION 9: OUR GLOBAL SERVICES HUB
          -------------------------------------------------------------------------------- */}
-      <div className="py-16 lg:py-24 bg-black text-white relative overflow-hidden">
-         <div className="absolute inset-0 opacity-40">
-            <img src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=2086&auto=format&fit=crop" alt="Campus" className="w-full h-full object-cover" loading="lazy" />
-         </div>
-         <div className="relative z-10 max-w-7xl mx-auto px-4 flex flex-col items-center text-center">
-            <PlayCircle className="w-20 h-20 lg:w-24 lg:h-24 text-white opacity-80 mb-8 hover:scale-110 transition cursor-pointer" />
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">Experience Campus Life</h2>
-            <p className="text-lg lg:text-xl text-slate-300 mb-10 max-w-2xl">
-               Take a virtual walk through the engineering labs, hostels, and sports complex before you even apply.
-            </p>
-            <button className="bg-white text-black px-12 py-4 rounded-full font-bold hover:bg-orange-500 hover:text-white transition shadow-2xl active:scale-95">
-               Start Virtual Tour
-            </button>
+      <div className="py-20 bg-slate-900 text-white">
+         <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center mb-16">
+               <span className="bg-orange-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Expansion 2025</span>
+               <h2 className="text-4xl md:text-5xl font-extrabold mt-4 mb-6">Our Global Services Hub</h2>
+               <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                  Beyond education. We are now bridging Zambia and India across 6 key sectors.
+               </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+               {/* Card 1: Medical */}
+               <div onClick={() => onNavigate(PublicView.MEDICAL_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-red-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2028')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <HeartPulse className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Medical Treatment</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        Access world-class healthcare. Surgery, Oncology, Transplants.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Card 2: Tourism */}
+               <div onClick={() => onNavigate(PublicView.TOURISM_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-orange-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2071')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <Plane className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Tourism & Culture</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        Taj Mahal tours, group trips, and cultural exchange programs.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Card 3: Work */}
+               <div onClick={() => onNavigate(PublicView.WORK_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-blue-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <Briefcase className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Jobs & Recruitment</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        International job placements, internships, and skilled migration.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Card 4: Invest */}
+               <div onClick={() => onNavigate(PublicView.INVEST_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-emerald-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <TrendingUp className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Invest & Business</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        High-yield investment opportunities in India and Zambia.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Card 5: Import */}
+               <div onClick={() => onNavigate(PublicView.IMPORT_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-purple-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <ShoppingBag className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Import & Shopping</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        We buy and ship global brands to your doorstep in Zambia.
+                     </p>
+                  </div>
+               </div>
+
+               {/* Card 6: Money */}
+               <div onClick={() => onNavigate(PublicView.MONEY_HUB)} className="group relative h-80 rounded-3xl overflow-hidden cursor-pointer border border-slate-700 hover:border-cyan-500 transition-all duration-500">
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1580519542036-c47de6196ba5?q=80&w=2071')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent opacity-90 group-hover:opacity-70 transition-opacity"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                     <div className="w-12 h-12 bg-cyan-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition">
+                        <DollarSign className="w-6 h-6 text-white"/>
+                     </div>
+                     <h3 className="text-2xl font-bold mb-2">Money Transfer</h3>
+                     <p className="text-slate-300 text-sm opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-500">
+                        Secure, instant, and low-cost remittances.
+                     </p>
+                  </div>
+               </div>
+            </div>
          </div>
       </div>
 
@@ -510,7 +686,85 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onNavigate }) => {
       </div>
 
       {/* --------------------------------------------------------------------------------
-         SECTION 11: FOOTER
+         SECTION 11: 100% FULL SCHOLARSHIP EXAM
+         -------------------------------------------------------------------------------- */}
+      <div className="py-24 bg-slate-900 relative overflow-hidden">
+         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070')] bg-cover bg-center"></div>
+         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-900/50"></div>
+         
+         <div className="max-w-7xl mx-auto px-4 relative z-10 flex flex-col lg:flex-row items-center gap-12">
+            <div className="lg:w-1/2 text-white">
+               <div className="inline-flex items-center bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-full mb-6 shadow-xl animate-pulse tracking-wider">
+                  <Award className="w-4 h-4 mr-2" /> LIMITED TIME OFFER
+               </div>
+               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                  100% Full <br/> Scholarship Exam
+               </h2>
+               <p className="text-xl md:text-2xl text-orange-400 font-medium mb-6">
+                  Your Opportunity to Study in India – Fully Sponsored
+               </p>
+               
+               <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="flex items-center text-slate-300">
+                     <Check className="w-5 h-5 text-emerald-400 mr-2 flex-shrink-0" /> 100% Tuition
+                  </div>
+                  <div className="flex items-center text-slate-300">
+                     <Check className="w-5 h-5 text-emerald-400 mr-2 flex-shrink-0" /> Accommodation
+                  </div>
+                  <div className="flex items-center text-slate-300">
+                     <Check className="w-5 h-5 text-emerald-400 mr-2 flex-shrink-0" /> Visa Assistance
+                  </div>
+                  <div className="flex items-center text-slate-300">
+                     <Check className="w-5 h-5 text-emerald-400 mr-2 flex-shrink-0" /> Flight Support
+                  </div>
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                     onClick={() => onNavigate(PublicView.SCHOLARSHIP_EXAM)}
+                     className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transition transform active:scale-95 text-lg text-center"
+                  >
+                     Register Now
+                  </button>
+                  <button 
+                     onClick={() => onNavigate(PublicView.SCHOLARSHIP_EXAM)}
+                     className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white font-bold py-4 px-8 rounded-full shadow-lg transition transform active:scale-95 text-lg text-center"
+                  >
+                     Learn More
+                  </button>
+               </div>
+            </div>
+
+            <div className="lg:w-1/2 w-full">
+               <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center shadow-2xl">
+                  <h3 className="text-2xl font-bold text-white mb-2">Registration Closes In:</h3>
+                  <p className="text-emerald-400 font-medium mb-8">Deadline: 30th March</p>
+                  
+                  <div className="grid grid-cols-4 gap-4">
+                     <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700">
+                        <div className="text-3xl md:text-5xl font-bold text-white mb-1">{timeLeft.days}</div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider">Days</div>
+                     </div>
+                     <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700">
+                        <div className="text-3xl md:text-5xl font-bold text-white mb-1">{timeLeft.hours}</div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider">Hours</div>
+                     </div>
+                     <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700">
+                        <div className="text-3xl md:text-5xl font-bold text-white mb-1">{timeLeft.minutes}</div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider">Mins</div>
+                     </div>
+                     <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700">
+                        <div className="text-3xl md:text-5xl font-bold text-white mb-1">{timeLeft.seconds}</div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider">Secs</div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      {/* --------------------------------------------------------------------------------
+         SECTION 12: FOOTER
          -------------------------------------------------------------------------------- */}
       <Footer onNavigate={onNavigate} />
 

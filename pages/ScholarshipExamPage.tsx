@@ -31,11 +31,11 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
   const faqs = [
     {
       q: "Is this exam mandatory for all students?",
-      a: "No. This exam is specifically for students seeking 100% full sponsorship. If you are applying for partial scholarships (50-75%), you do not need to write this exam."
+      a: "No. This exam is specifically for students seeking 100% full sponsorship. If you are applying for partial scholarships (50-100%), you do not need to write this exam."
     },
     {
       q: "What happens if I fail the exam?",
-      a: "There is no 'fail'. Your score determines your scholarship percentage. Even if you don't get 100%, you may still qualify for 75% or 50% awards based on your performance."
+      a: "There is no 'fail'. Your score determines your scholarship percentage. Even if you don't get 100%, you may still qualify for 100% or 50% awards based on your performance."
     },
     {
       q: "Can I write the exam from my phone?",
@@ -65,7 +65,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
           
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight tracking-tight">
             The National Scholarship <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Merit Exam 2026</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Full Scholarship Exam 2026</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto font-light mb-10 leading-relaxed">
@@ -113,9 +113,9 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
       {/* 2. WHAT IS THIS EXAM */}
       <div className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">What is the Merit Exam?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">What is the Full Scholarship Exam?</h2>
           <p className="text-lg text-slate-600 leading-relaxed mb-8">
-            The National Scholarship Merit Exam is a standardized online assessment designed to identify Zambia's brightest academic talents. Unlike standard university applications that rely solely on Grade 12 results, this exam gives you a second chance to prove your aptitude, critical thinking, and readiness for international education.
+            The Full Scholarship Exam is a standardized online assessment designed to identify Zambia's brightest academic talents. Unlike standard university applications that rely solely on Grade 12 results, this exam gives you a second chance to prove your aptitude, critical thinking, and readiness for international education.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-left">
             <div className="p-6 bg-slate-50 rounded-xl border border-slate-100">
@@ -158,7 +158,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
                     <CheckCircle className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900">Merit Exam Route</h3>
+                    <h3 className="font-bold text-slate-900">Full Scholarship Exam Route</h3>
                     <p className="text-slate-500 text-sm">Exclusive pool. Tests current potential. Unlocks 100% sponsorship tiers.</p>
                   </div>
                 </div>
@@ -169,7 +169,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm font-bold mb-1">
-                    <span>Merit Exam Takers</span>
+                    <span>Exam Takers</span>
                     <span className="text-emerald-600">90% Success Rate</span>
                   </div>
                   <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
@@ -197,7 +197,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
           <ShieldCheck className="w-16 h-16 text-yellow-400 mx-auto mb-6" />
           <h2 className="text-3xl font-bold mb-4">Our Iron-Clad Guarantee</h2>
           <p className="text-lg text-slate-300 leading-relaxed">
-            If you score above 85% on the Merit Exam and meet the basic university entry requirements, we <span className="text-yellow-400 font-bold">guarantee</span> you a minimum of 75% scholarship offer within 7 days.
+            If you score above 85% on the Full Scholarship Exam and meet the basic university entry requirements, we <span className="text-yellow-400 font-bold">guarantee</span> you a minimum of 100% scholarship offer within 7 days.
           </p>
         </div>
       </div>
@@ -409,7 +409,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
           <div className="bg-slate-50 p-8 rounded-2xl border border-slate-100 relative">
             <div className="text-4xl text-slate-300 absolute top-4 left-4">"</div>
             <p className="text-lg text-slate-600 italic mb-6 relative z-10">
-              I had 18 points in Grade 12 and thought my dream was over. I wrote the Merit Exam, scored 88%, and got a 100% scholarship to Shoolini University. This exam changed my life.
+              I had 18 points in Grade 12 and thought my dream was over. I wrote the Full Scholarship Exam, scored 88%, and got a 100% scholarship to Shoolini University. This exam changed my life.
             </p>
             <div className="flex items-center justify-center gap-4">
               <div className="w-12 h-12 bg-slate-200 rounded-full"></div>

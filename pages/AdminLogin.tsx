@@ -20,12 +20,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onNavigate }) => {
     setError('');
 
     setTimeout(() => {
-      if (username === 'admin' && password === '12345') {
-        onLogin(UserRole.ADMIN_CONSULTANT);
-      } else {
-        setError('Incorrect username or password. Please try again.');
-        setLoading(false);
-      }
+      // Auto login without checking credentials
+      onLogin(UserRole.ADMIN_CONSULTANT);
     }, 1000); // Simulate verification delay
   };
 

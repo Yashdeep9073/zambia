@@ -14,6 +14,11 @@ import {
 
 // --- SCHEMA DEFINITIONS ---
 const COLLECTIONS = [
+  "universities",
+  "university_profiles",
+  "university_documents",
+  "university_fair_calculations",
+  "university_auth_logs",
   "users",
   "applications",
   "programs",

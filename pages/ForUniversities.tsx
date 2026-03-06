@@ -17,8 +17,9 @@ interface ForUniversitiesProps {
 const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }) => {
   // Calculator State
   const [calcTarget, setCalcTarget] = useState(50);
-  const [calcBudget, setCalcBudget] = useState(5000);
+  const [calcBudget, setCalcBudget] = useState(25000);
   const [calcRate, setCalcRate] = useState(15);
+  const [isBookingFair, setIsBookingFair] = useState(false);
 
   // Form State
   const [formStep, setFormStep] = useState(1);
@@ -37,15 +38,51 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
   }, []);
 
   // Calculated Values
-  const registrationsNeeded = Math.ceil(calcTarget / (calcRate / 100));
-  const cpa = Math.round(calcBudget / registrationsNeeded);
+  const getMarketingCost = (students: number) => {
+    if (students <= 10) return 3000;
+    if (students <= 20) return 5000;
+    if (students <= 50) return 15000;
+    return 25000;
+  };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setCalcBudget(getMarketingCost(calcTarget));
+  }, [calcTarget]);
+
+  const handleBookFair = async () => {
+    setIsBookingFair(true);
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../src/firebase');
+      
+      await addDoc(collection(db, 'university_fair_calculations'), {
+        university_name: "Pending Partner", // Would come from auth context in real app
+        contact_email: "pending@partner.com", // Would come from auth context in real app
+        student_range: calcTarget,
+        calculated_cost: calcBudget,
+        timestamp: serverTimestamp()
+      });
+      
+      alert("Fair calculation saved successfully! Our team will contact you.");
+    } catch (error) {
+      console.error("Error saving fair calculation:", error);
+      alert("There was an error saving your request. Please try again.");
+    } finally {
+      setIsBookingFair(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate Backend Processing
-    setTimeout(() => {
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../src/firebase');
+      
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      
       const year = new Date().getFullYear();
       const randomId = Math.floor(1000 + Math.random() * 9000);
       const uniId = `UNI-${year}-${randomId}`;
@@ -58,14 +95,27 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
         pass: password
       };
 
+      // Save to Firestore
+      await addDoc(collection(db, 'universities'), {
+        university_id: uniId,
+        email: email,
+        temporary_password: password, // In a real app, this should be hashed
+        status: 'pending_review',
+        timestamp: serverTimestamp()
+      });
+
       setGeneratedCreds(creds);
       
       // Store in localStorage (Simulating DB)
       localStorage.setItem('uni_credentials', JSON.stringify(creds));
       
-      setIsSubmitting(false);
       setFormSuccess(true);
-    }, 2000);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("There was an error submitting your application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const scrollToForm = () => {
@@ -125,23 +175,23 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
           <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 relative">
             <div className="absolute -top-6 -right-6 bg-amber-500 w-24 h-24 rounded-full opacity-20 blur-xl"></div>
             <div className="grid grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                <Users className="w-10 h-10 text-blue-600 mx-auto mb-4" />
+              <div className="bg-white p-6 rounded-2xl shadow-sm text-center group hover:shadow-xl transition-all duration-300">
+                <img src="https://images.unsplash.com/photo-1614036417651-1d451f41cb2d?q=80&w=200&auto=format&fit=crop" alt="Community Members" className="w-16 h-16 mx-auto mb-4 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-3xl font-extrabold text-slate-900">6,500+</h3>
                 <p className="text-xs text-slate-500 uppercase font-bold mt-1">Community Members</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                <CheckCircle className="w-10 h-10 text-emerald-600 mx-auto mb-4" />
+              <div className="bg-white p-6 rounded-2xl shadow-sm text-center group hover:shadow-xl transition-all duration-300">
+                <img src="https://images.unsplash.com/photo-1633409361618-c73427e4e206?q=80&w=200&auto=format&fit=crop" alt="Visa Success Rate" className="w-16 h-16 mx-auto mb-4 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-3xl font-extrabold text-slate-900">98%</h3>
                 <p className="text-xs text-slate-500 uppercase font-bold mt-1">Visa Success Rate</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                <Building className="w-10 h-10 text-slate-600 mx-auto mb-4" />
+              <div className="bg-white p-6 rounded-2xl shadow-sm text-center group hover:shadow-xl transition-all duration-300">
+                <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=200&auto=format&fit=crop" alt="Partner Focus" className="w-16 h-16 mx-auto mb-4 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(71,85,105,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-3xl font-extrabold text-slate-900">Top 100</h3>
                 <p className="text-xs text-slate-500 uppercase font-bold mt-1">Partner Focus</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-                <Globe className="w-10 h-10 text-orange-600 mx-auto mb-4" />
+              <div className="bg-white p-6 rounded-2xl shadow-sm text-center group hover:shadow-xl transition-all duration-300">
+                <img src="https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=200&auto=format&fit=crop" alt="Digital Process" className="w-16 h-16 mx-auto mb-4 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-3xl font-extrabold text-slate-900">100%</h3>
                 <p className="text-xs text-slate-500 uppercase font-bold mt-1">Digital Process</p>
               </div>
@@ -194,18 +244,18 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
           <div className="relative bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-amber-500 to-emerald-600"></div>
             <div className="p-12 grid md:grid-cols-3 gap-12 text-left">
-              <div>
-                <Layers className="w-10 h-10 text-blue-600 mb-6" />
+              <div className="group">
+                <img src="https://images.unsplash.com/photo-1614036417651-1d451f41cb2d?q=80&w=200&auto=format&fit=crop" alt="Structured Workflow" className="w-16 h-16 mb-6 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Structured Workflow</h3>
                 <p className="text-slate-600 text-sm">Students move through locked stages. They cannot proceed to Visa without a verified Offer Letter.</p>
               </div>
-              <div>
-                <Activity className="w-10 h-10 text-amber-500 mb-6" />
+              <div className="group">
+                <img src="https://images.unsplash.com/photo-1633409361618-c73427e4e206?q=80&w=200&auto=format&fit=crop" alt="Waiting Room Gamification" className="w-16 h-16 mb-6 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(245,158,11,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Waiting Room Gamification</h3>
                 <p className="text-slate-600 text-sm">While waiting for offers, students complete tasks (Passport, Budgeting) to increase readiness.</p>
               </div>
-              <div>
-                <Database className="w-10 h-10 text-emerald-600 mb-6" />
+              <div className="group">
+                <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=200&auto=format&fit=crop" alt="Real-Time Dashboards" className="w-16 h-16 mb-6 rounded-full shadow-md group-hover:scale-110 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-300 object-cover" />
                 <h3 className="text-xl font-bold text-slate-900 mb-2">Real-Time Dashboards</h3>
                 <p className="text-slate-600 text-sm">Universities get a portal to view pre-screened leads, issue offers, and track arrivals.</p>
               </div>
@@ -291,19 +341,19 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
           <h2 className="text-3xl font-bold text-center text-slate-900 mb-16">Why Top Universities Choose ZII</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {[
-              { label: "Conversion Rate", icon: TrendingUp },
-              { label: "Student Quality", icon: Award },
-              { label: "Doc Authenticity", icon: Shield },
-              { label: "Visa Success", icon: Plane },
-              { label: "Market Reach", icon: Globe },
-              { label: "Compliance", icon: FileText },
-              { label: "Brand Safety", icon: CheckCircle },
-              { label: "Retention", icon: UserCheck },
-              { label: "Transparency", icon: UserCheck },
-              { label: "Scalability", icon: BarChart },
+              { label: "Conversion Rate", img: "https://images.unsplash.com/photo-1614036417651-1d451f41cb2d?q=80&w=200&auto=format&fit=crop" },
+              { label: "Student Quality", img: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?q=80&w=200&auto=format&fit=crop" },
+              { label: "Doc Authenticity", img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=200&auto=format&fit=crop" },
+              { label: "Visa Success", img: "https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=200&auto=format&fit=crop" },
+              { label: "Market Reach", img: "https://images.unsplash.com/photo-1614036417651-1d451f41cb2d?q=80&w=200&auto=format&fit=crop" },
+              { label: "Compliance", img: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?q=80&w=200&auto=format&fit=crop" },
+              { label: "Brand Safety", img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=200&auto=format&fit=crop" },
+              { label: "Retention", img: "https://images.unsplash.com/photo-1618044733300-9472054094ee?q=80&w=200&auto=format&fit=crop" },
+              { label: "Transparency", img: "https://images.unsplash.com/photo-1614036417651-1d451f41cb2d?q=80&w=200&auto=format&fit=crop" },
+              { label: "Scalability", img: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?q=80&w=200&auto=format&fit=crop" },
             ].map((factor, i) => (
-              <div key={i} className="bg-slate-50 p-6 rounded-xl text-center hover:bg-amber-50 hover:border-amber-200 border border-transparent transition group">
-                <factor.icon className="w-8 h-8 mx-auto mb-4 text-slate-400 group-hover:text-amber-500 transition" />
+              <div key={i} className="bg-slate-50 p-6 rounded-xl text-center hover:bg-amber-50 hover:border-amber-200 border border-transparent transition group hover:shadow-lg">
+                <img src={factor.img} alt={factor.label} className="w-12 h-12 mx-auto mb-4 rounded-full shadow-sm group-hover:scale-110 group-hover:shadow-[0_0_10px_rgba(245,158,11,0.5)] transition-all duration-300 object-cover" />
                 <h4 className="font-bold text-slate-700 text-sm group-hover:text-slate-900">{factor.label}</h4>
               </div>
             ))}
@@ -314,64 +364,53 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
       {/* 7. EXHIBITION PLANNING CALCULATOR */}
       <div className="py-24 bg-slate-100">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200 flex flex-col md:flex-row">
-            <div className="md:w-1/3 bg-slate-900 text-white p-8 md:p-12">
-              <h3 className="text-2xl font-bold mb-4">Plan Your Fair</h3>
-              <p className="text-slate-400 mb-8 text-sm">
-                Thinking of hosting a recruitment drive in Zambia? Calculate your metrics instantly.
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border border-white/50 flex flex-col md:flex-row relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 pointer-events-none"></div>
+            <div className="md:w-1/2 bg-slate-900/95 backdrop-blur-md text-white p-8 md:p-12 relative z-10 border-r border-slate-800">
+              <h3 className="text-3xl font-extrabold mb-4 tracking-tight">Plan Your Fair</h3>
+              <p className="text-slate-400 mb-10 text-sm leading-relaxed">
+                Thinking of hosting a recruitment drive in Zambia? Calculate your marketing cost instantly based on your target intake.
               </p>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Target Intake (Students)</label>
+              <div className="space-y-8">
+                <div className="relative">
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider">Target Intake (Students)</label>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-500">1</span>
+                    <span className="text-3xl font-extrabold text-amber-400">{calcTarget}</span>
+                    <span className="text-sm font-medium text-slate-500">100+</span>
+                  </div>
                   <input 
-                    type="number" 
+                    type="range" min="1" max="100"
                     value={calcTarget} 
                     onChange={(e) => setCalcTarget(Number(e.target.value))}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 outline-none"
+                    className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 shadow-inner"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Marketing Budget ($)</label>
-                  <input 
-                    type="number" 
-                    value={calcBudget} 
-                    onChange={(e) => setCalcBudget(Number(e.target.value))}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Exp. Conversion Rate (%)</label>
-                  <input 
-                    type="range" min="5" max="50"
-                    value={calcRate} 
-                    onChange={(e) => setCalcRate(Number(e.target.value))}
-                    className="w-full accent-amber-500"
-                  />
-                  <div className="text-right text-xs text-amber-400 font-bold mt-1">{calcRate}%</div>
+                  <div className="flex justify-between text-[10px] text-slate-600 mt-2 font-bold uppercase">
+                    <span>Small</span>
+                    <span>Medium</span>
+                    <span>Large</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="md:w-2/3 p-8 md:p-12 flex flex-col justify-center">
-               <h3 className="text-2xl font-bold text-slate-900 mb-8">Campaign Projections</h3>
-               <div className="grid grid-cols-2 gap-8">
-                  <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
-                     <p className="text-sm font-bold text-blue-800 uppercase mb-1">Registrations Needed</p>
-                     <p className="text-4xl font-extrabold text-blue-900">{registrationsNeeded}</p>
-                     <p className="text-xs text-blue-600 mt-2">Qualified leads to hit target</p>
+            <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative z-10 bg-gradient-to-br from-slate-50 to-slate-100">
+               <h3 className="text-2xl font-extrabold text-slate-900 mb-8 tracking-tight">Campaign Investment</h3>
+               <div className="bg-white p-8 rounded-2xl shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] border border-slate-200 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150 duration-500"></div>
+                  <p className="text-sm font-bold text-slate-500 uppercase mb-2 tracking-wider">Estimated Marketing Cost</p>
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-bold text-slate-400 mr-1">$</span>
+                    <p className="text-6xl font-black text-slate-900 tracking-tighter animate-fade-in-up">{calcBudget.toLocaleString()}</p>
                   </div>
-                  <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
-                     <p className="text-sm font-bold text-emerald-800 uppercase mb-1">Cost Per Acquisition</p>
-                     <p className="text-4xl font-extrabold text-emerald-900">${Math.round(calcBudget/calcTarget)}</p>
-                     <p className="text-xs text-emerald-600 mt-2">Marketing spend per student</p>
-                  </div>
+                  <p className="text-xs text-slate-500 mt-4 font-medium">Includes digital pre-campaign, venue, and logistics.</p>
                </div>
-               <div className="mt-8 bg-amber-50 p-4 rounded-xl border border-amber-100 flex items-start">
-                  <Handshake className="w-5 h-5 text-amber-600 mr-3 flex-shrink-0 mt-1"/>
-                  <div>
-                     <h4 className="font-bold text-amber-800 text-sm">ZII Recommendation</h4>
-                     <p className="text-amber-700 text-xs mt-1">Based on these targets, we recommend a 3-city tour (Lusaka, Ndola, Kitwe) combined with a 4-week digital pre-campaign.</p>
-                  </div>
-               </div>
+               <button 
+                 onClick={handleBookFair}
+                 disabled={isBookingFair}
+                 className="mt-8 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+               >
+                 {isBookingFair ? 'Processing...' : 'Book Your Fair'}
+               </button>
             </div>
           </div>
         </div>
@@ -485,22 +524,25 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                      </div>
                   </div>
                ) : (
-                  <form onSubmit={handleFormSubmit} className="p-8 md:p-12 space-y-8">
+                  <form onSubmit={handleFormSubmit} className="p-8 md:p-12 space-y-12">
                      {/* Section 1: Basic Info */}
-                     <div>
-                        <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2 mb-6">University Information</h3>
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">1</div>
+                           <h3 className="text-xl font-bold text-slate-900">University Information</h3>
+                        </div>
                         <div className="grid md:grid-cols-2 gap-6">
                            <div>
-                              <label className="label">University Name</label>
-                              <input required type="text" className="input-field" placeholder="e.g. Example University"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">University Name <span className="text-red-500">*</span></label>
+                              <input required type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Example University"/>
                            </div>
                            <div>
-                              <label className="label">Website URL</label>
-                              <input required type="url" className="input-field" placeholder="https://"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Website URL <span className="text-red-500">*</span></label>
+                              <input required type="url" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="https://"/>
                            </div>
                            <div>
-                              <label className="label">NAAC Grade</label>
-                              <select className="input-field">
+                              <label className="block text-sm font-bold text-slate-700 mb-2">NAAC Grade</label>
+                              <select className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium appearance-none cursor-pointer">
                                  <option>A++</option>
                                  <option>A+</option>
                                  <option>A</option>
@@ -509,63 +551,149 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                               </select>
                            </div>
                            <div>
-                              <label className="label">NIRF Ranking (Approx)</label>
-                              <input type="text" className="input-field" placeholder="e.g. Top 50"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">NIRF Ranking (Approx)</label>
+                              <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Top 50"/>
                            </div>
                         </div>
                      </div>
 
                      {/* Section 2: Contact */}
-                     <div>
-                        <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2 mb-6">Contact Person (Director/Dean)</h3>
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">2</div>
+                           <h3 className="text-xl font-bold text-slate-900">Contact Details</h3>
+                        </div>
                         <div className="grid md:grid-cols-2 gap-6">
                            <div>
-                              <label className="label">Full Name</label>
-                              <input required type="text" className="input-field"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Full Name (Director/Dean) <span className="text-red-500">*</span></label>
+                              <input required type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
                            </div>
                            <div>
-                              <label className="label">Official Email</label>
-                              <input required type="email" className="input-field" ref={emailRef}/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Official Email <span className="text-red-500">*</span></label>
+                              <input required type="email" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" ref={emailRef}/>
                            </div>
                            <div>
-                              <label className="label">Direct Phone / WhatsApp</label>
-                              <input required type="tel" className="input-field"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Direct Phone / WhatsApp <span className="text-red-500">*</span></label>
+                              <input required type="tel" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
                            </div>
                            <div>
-                              <label className="label">Office Address</label>
-                              <input type="text" className="input-field"/>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Office Address</label>
+                              <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
                            </div>
                         </div>
                      </div>
 
-                     {/* Section 3: Criteria Check */}
-                     <div>
-                        <h3 className="text-lg font-bold text-slate-900 border-b border-slate-200 pb-2 mb-6">Partnership Criteria</h3>
+                     {/* Section 3: Program Offerings */}
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">3</div>
+                           <h3 className="text-xl font-bold text-slate-900">Program Offerings</h3>
+                        </div>
                         <div className="space-y-4">
-                           <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50">
-                              <input type="checkbox" required className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500" />
-                              <span className="text-sm font-medium text-slate-700">We confirm we have a dedicated International Student Office.</span>
+                           <label className="block text-sm font-bold text-slate-700 mb-2">Top 3 Programs for International Students</label>
+                           <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium mb-3" placeholder="Program 1"/>
+                           <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium mb-3" placeholder="Program 2"/>
+                           <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="Program 3"/>
+                        </div>
+                     </div>
+
+                     {/* Section 4: Student Support */}
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">4</div>
+                           <h3 className="text-xl font-bold text-slate-900">Student Support</h3>
+                        </div>
+                        <div className="space-y-4">
+                           <label className="flex items-center space-x-4 p-5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition-colors">
+                              <input type="checkbox" required className="w-6 h-6 text-amber-500 rounded focus:ring-amber-500" />
+                              <span className="text-sm font-bold text-slate-700">We confirm we have a dedicated International Student Office. <span className="text-red-500">*</span></span>
                            </label>
-                           <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50">
-                              <input type="checkbox" required className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500" />
-                              <span className="text-sm font-medium text-slate-700">We provide guaranteed accommodation and meals for international students.</span>
-                           </label>
-                           <label className="flex items-center space-x-3 p-4 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50">
-                              <input type="checkbox" className="w-5 h-5 text-amber-500 rounded focus:ring-amber-500" />
-                              <span className="text-sm font-medium text-slate-700">We are interested in hosting a recruitment fair in Zambia.</span>
+                           <label className="flex items-center space-x-4 p-5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition-colors">
+                              <input type="checkbox" required className="w-6 h-6 text-amber-500 rounded focus:ring-amber-500" />
+                              <span className="text-sm font-bold text-slate-700">We provide guaranteed accommodation and meals for international students. <span className="text-red-500">*</span></span>
                            </label>
                         </div>
                      </div>
 
-                     <div className="pt-4">
+                     {/* Section 5: Fair & Marketing Interest */}
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">5</div>
+                           <h3 className="text-xl font-bold text-slate-900">Fair & Marketing Interest</h3>
+                        </div>
+                        <div className="space-y-4">
+                           <label className="flex items-center space-x-4 p-5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition-colors">
+                              <input type="checkbox" className="w-6 h-6 text-amber-500 rounded focus:ring-amber-500" />
+                              <span className="text-sm font-bold text-slate-700">We are interested in hosting a recruitment fair in Zambia.</span>
+                           </label>
+                           <label className="flex items-center space-x-4 p-5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition-colors">
+                              <input type="checkbox" className="w-6 h-6 text-amber-500 rounded focus:ring-amber-500" />
+                              <span className="text-sm font-bold text-slate-700">We are interested in digital marketing campaigns.</span>
+                           </label>
+                        </div>
+                     </div>
+
+                     {/* Section 6: Document Uploads */}
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">6</div>
+                           <h3 className="text-xl font-bold text-slate-900">Document Uploads</h3>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                           <div>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">University Brochure (PDF)</label>
+                              <div className="w-full bg-white border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-amber-500 transition-colors cursor-pointer">
+                                 <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                 <span className="text-sm text-slate-500 font-medium">Click to upload or drag and drop</span>
+                                 <input type="file" className="hidden" accept=".pdf" />
+                              </div>
+                           </div>
+                           <div>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Fee Structure (PDF)</label>
+                              <div className="w-full bg-white border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-amber-500 transition-colors cursor-pointer">
+                                 <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                 <span className="text-sm text-slate-500 font-medium">Click to upload or drag and drop</span>
+                                 <input type="file" className="hidden" accept=".pdf" />
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Section 7: Declaration */}
+                     <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                        <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
+                           <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-900 font-bold mr-3">7</div>
+                           <h3 className="text-xl font-bold text-slate-900">Declaration</h3>
+                        </div>
+                        <div className="space-y-6">
+                           <label className="flex items-start space-x-4 p-5 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition-colors">
+                              <input type="checkbox" required className="w-6 h-6 text-amber-500 rounded focus:ring-amber-500 mt-1" />
+                              <span className="text-sm font-bold text-slate-700 leading-relaxed">I hereby declare that the information provided is true and correct. I understand that any false information may result in the rejection of this application. <span className="text-red-500">*</span></span>
+                           </label>
+                           <div>
+                              <label className="block text-sm font-bold text-slate-700 mb-2">Digital Signature (Type Full Name) <span className="text-red-500">*</span></label>
+                              <input required type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium font-serif italic text-lg" placeholder="Sign here"/>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="pt-8 border-t border-slate-200">
                         <button 
                            type="submit" 
                            disabled={isSubmitting}
-                           className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 transition shadow-lg flex items-center justify-center"
+                           className="w-full bg-slate-900 text-white py-5 rounded-2xl font-extrabold text-xl hover:bg-slate-800 transition-all shadow-xl hover:shadow-2xl flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-1 active:scale-95"
                         >
-                           {isSubmitting ? 'Processing...' : 'Submit Partnership Application'}
+                           {isSubmitting ? (
+                             <span className="flex items-center">
+                               <svg className="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                               </svg>
+                               Processing Application...
+                             </span>
+                           ) : 'Submit Partnership Application'}
                         </button>
-                        <p className="text-xs text-center text-slate-400 mt-4">By submitting, you agree to our rigorous vetting process and ethical admissions code.</p>
+                        <p className="text-sm font-medium text-center text-slate-500 mt-6">By submitting, you agree to our rigorous vetting process and ethical admissions code.</p>
                      </div>
                   </form>
                )}

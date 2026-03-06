@@ -143,7 +143,7 @@ export const UNIVERSITIES_LIST: University[] = [
     location: "Punjab",
     website: "https://ltsu.ac.in",
     isPartner: true,
-    scholarship: "75% Scholarship",
+    scholarship: "100% Scholarship",
     features: ["Industry Focused", "Skill Based", "High Placement"],
     logo: "https://ltsu.ac.in/images/logo.png",
     establishedYear: "2021",

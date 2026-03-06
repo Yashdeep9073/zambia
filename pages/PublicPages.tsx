@@ -17,6 +17,14 @@ import ForUniversities from './ForUniversities';
 import LegalPages from './LegalPages';
 import StudentCentre from './StudentCentre';
 import ScholarshipExamPage from './ScholarshipExamPage';
+import MedicalPage from './MedicalPage';
+import TourismPage from './TourismPage';
+import WorkPage from './WorkPage';
+import InvestPage from './InvestPage';
+import ImportPage from './ImportPage';
+import MoneyTransferPage from './MoneyTransferPage';
+import RecruitmentPage from './RecruitmentPage';
+import SearchResults from './SearchResults';
 import { FULL_COURSES_DATA, UNIVERSITIES_LIST, Course, University } from '../src/data/courses';
 
 const ServiceCard = ({ title, icon, desc, colorClass }: { title: string, icon: React.ReactNode, desc: string, colorClass: string }) => (
@@ -95,8 +103,8 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
         desc = "Resources for prospective and current students. Access scholarship search, visa renewal guides, and connect with the alumni network.";
         break;
       case PublicView.SCHOLARSHIP_EXAM:
-        title = "National Scholarship Merit Exam | 100% Sponsorship | ZII";
-        desc = "Register for the National Scholarship Merit Exam. Your pathway to 100% full sponsorship at top Indian universities.";
+        title = "Full Scholarship Exam | 100% Sponsorship | ZII";
+        desc = "Register for the Full Scholarship Exam. Your pathway to 100% full sponsorship at top Indian universities.";
         break;
       case PublicView.CONTACT:
         title = "Contact Zambians In India | Full Student Support & Application Help";
@@ -135,10 +143,9 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
       setLoginError('');
 
       try {
-          // For now, we'll use the auth service for all roles
-          // In a real app, you might want to validate the role after login
-          const { loginUser } = await import('../src/services/authService');
-          await loginUser(loginUsername, loginPassword);
+          // Firebase authentication disabled for auto-login
+          // const { loginUser } = await import('../src/services/authService');
+          // await loginUser(loginUsername, loginPassword);
           
           // Role-based redirection logic would go here
           // For now, we'll use the selected portal to determine the role
@@ -894,7 +901,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
                       
                       {/* Intake Countdown */}
                       <div className="mt-6 bg-orange-600/90 backdrop-blur text-white py-2 px-6 rounded-full inline-block font-bold text-sm md:text-base animate-pulse shadow-lg border border-orange-400">
-                          ⏳ June 2026 Intake: <span className="text-yellow-300">14 Days Left</span> to Apply for 75% Scholarship!
+                          ⏳ June 2026 Intake: <span className="text-yellow-300">14 Days Left</span> to Apply for 100% Scholarship!
                       </div>
 
                       {/* Search Bar */}
@@ -1398,6 +1405,16 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
       </div>
     );
   }
+
+  // --- SERVICE HUBS ---
+  if (view === PublicView.MEDICAL_HUB) return <MedicalPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.TOURISM_HUB) return <TourismPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.WORK_HUB) return <WorkPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.INVEST_HUB) return <InvestPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.IMPORT_HUB) return <ImportPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.MONEY_HUB) return <MoneyTransferPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.RECRUITMENT_HUB) return <RecruitmentPage onNavigate={onNavigate} onLogin={onLogin} />;
+  if (view === PublicView.SEARCH_RESULTS) return <SearchResults onNavigate={onNavigate} onLogin={onLogin} />;
 
   // --- REBUILT CONTACT PAGE (STUDENT SUPPORT COMMAND CENTER) ---
   if (view === PublicView.CONTACT) {

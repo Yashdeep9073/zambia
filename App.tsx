@@ -264,6 +264,16 @@ const AppContent: React.FC = () => {
              </div>
              <span className="text-[10px] font-bold text-slate-700">Phone</span>
           </button>
+
+          {/* Login */}
+          <button onClick={() => handleViewChange(PublicView.PORTAL_LOGIN)} className="flex flex-col items-center gap-1 active:scale-95 transition">
+             <div className="bg-slate-900 p-2 rounded-full text-white shadow-sm border border-slate-700">
+               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-none stroke-current stroke-2" xmlns="http://www.w3.org/2000/svg">
+                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+               </svg>
+             </div>
+             <span className="text-[10px] font-bold text-slate-700">Login</span>
+          </button>
       </div>
     </>
   );

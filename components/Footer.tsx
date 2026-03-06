@@ -46,11 +46,18 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <li><button onClick={() => onNavigate(PublicView.ABOUT)} className="hover:text-orange-400 transition">About ZII</button></li>
           </ul>
 
-          <h4 className="font-bold text-lg mb-4 text-white border-b border-slate-800 pb-2 inline-block">Scholarships / Opportunities</h4>
+          <h4 className="font-bold text-lg mb-4 text-white border-b border-slate-800 pb-2 inline-block">Services & Opportunities</h4>
           <ul className="space-y-3 text-sm text-slate-300">
-            <li>
+            <li><button onClick={() => onNavigate(PublicView.MEDICAL_HUB)} className="hover:text-orange-400 transition">Medical Treatment</button></li>
+            <li><button onClick={() => onNavigate(PublicView.TOURISM_HUB)} className="hover:text-orange-400 transition">Tourism & Culture</button></li>
+            <li><button onClick={() => onNavigate(PublicView.WORK_HUB)} className="hover:text-orange-400 transition">Jobs & Recruitment</button></li>
+            <li><button onClick={() => onNavigate(PublicView.INVEST_HUB)} className="hover:text-orange-400 transition">Invest & Business</button></li>
+            <li><button onClick={() => onNavigate(PublicView.IMPORT_HUB)} className="hover:text-orange-400 transition">Import & Shopping</button></li>
+            <li><button onClick={() => onNavigate(PublicView.MONEY_HUB)} className="hover:text-orange-400 transition">Money Transfer</button></li>
+            <li><button onClick={() => onNavigate(PublicView.RECRUITMENT_HUB)} className="hover:text-orange-400 transition">Recruitment</button></li>
+            <li className="pt-2 border-t border-slate-800">
               <button onClick={() => onNavigate(PublicView.SCHOLARSHIP_EXAM)} className="hover:text-orange-400 transition flex items-center font-bold text-yellow-400">
-                <Award className="w-4 h-4 mr-2" /> National Merit Exam
+                <Award className="w-4 h-4 mr-2" /> Full Scholarship Exam
               </button>
             </li>
           </ul>

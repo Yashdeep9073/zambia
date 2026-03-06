@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, PublicView } from '../types';
-import { Shield, LogOut, Bell, Search, Menu, X, User, ArrowUp, Lock, Sparkles, Building } from 'lucide-react';
+import { Shield, LogOut, Bell, Search, Menu, X, User, ArrowUp, Lock, Sparkles, Building, ChevronDown } from 'lucide-react';
 
 interface NavigationProps {
   currentRole: UserRole | null;
@@ -63,6 +63,27 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
                      {item.label}
                    </button>
                  ))}
+
+                 {/* Services Dropdown */}
+                 <div className="relative group">
+                   <button 
+                     className="px-3 py-2 text-sm font-bold transition rounded-full text-emerald-100 hover:text-white hover:bg-emerald-800 flex items-center"
+                   >
+                     Services
+                     <ChevronDown className="w-4 h-4 ml-1" />
+                   </button>
+                   <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-100 overflow-hidden">
+                     <div className="py-2">
+                       <button onClick={() => onViewChange(PublicView.MEDICAL_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Medical Hub</button>
+                       <button onClick={() => onViewChange(PublicView.TOURISM_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Tourism Hub</button>
+                       <button onClick={() => onViewChange(PublicView.WORK_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Work Hub</button>
+                       <button onClick={() => onViewChange(PublicView.INVEST_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Invest Hub</button>
+                       <button onClick={() => onViewChange(PublicView.IMPORT_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Import Hub</button>
+                       <button onClick={() => onViewChange(PublicView.MONEY_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Money Hub</button>
+                       <button onClick={() => onViewChange(PublicView.RECRUITMENT_HUB)} className="block w-full text-left px-4 py-2 text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">Recruitment Hub</button>
+                     </div>
+                   </div>
+                 </div>
 
                  {/* For Universities Button */}
                  <button 
@@ -193,6 +214,19 @@ const Navigation: React.FC<NavigationProps> = ({ currentRole, onRoleChange, onLo
                 <Building className="w-5 h-5 mr-3" />
                 For Universities
              </button>
+
+             <div className="border-t border-emerald-700 pt-4 mt-2 mb-2">
+                <p className="px-4 text-xs font-bold text-emerald-400 uppercase mb-2 tracking-wider">Global Services</p>
+                <div className="grid grid-cols-2 gap-2 px-2">
+                   <button onClick={() => { onViewChange(PublicView.MEDICAL_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Medical</button>
+                   <button onClick={() => { onViewChange(PublicView.TOURISM_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Tourism</button>
+                   <button onClick={() => { onViewChange(PublicView.WORK_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Jobs</button>
+                   <button onClick={() => { onViewChange(PublicView.INVEST_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Invest</button>
+                   <button onClick={() => { onViewChange(PublicView.IMPORT_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Import</button>
+                   <button onClick={() => { onViewChange(PublicView.MONEY_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Money</button>
+                   <button onClick={() => { onViewChange(PublicView.RECRUITMENT_HUB); setMobileMenuOpen(false); }} className="text-left px-3 py-2 rounded-lg text-sm font-bold text-emerald-100 hover:bg-emerald-800 hover:text-white transition">Recruitment</button>
+                </div>
+             </div>
 
              <button 
                 onClick={() => { onViewChange(PublicView.PORTAL_LOGIN); setMobileMenuOpen(false); }}

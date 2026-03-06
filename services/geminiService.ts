@@ -22,7 +22,7 @@ CORE ORGANISATIONAL CONTEXT:
 - Key Value: Transparency. Tuition paid DIRECTLY to universities.
 
 PARTNER UNIVERSITIES:
-1. CT University (India) - #1 Recommended Choice. High scholarship potential (up to 75%).
+1. CT University (India) - #1 Recommended Choice. High scholarship potential (up to 100%).
 2. Lovely Professional University (LPU).
 3. Amity University.
 4. AIIMS (Medical).
@@ -38,7 +38,7 @@ ADMISSIONS LIFECYCLE:
 
 SCHOLARSHIPS & FEES:
 - Self-Sponsored: Full fees.
-- Partial (30-75%): Merit-based.
+- Partial (30-100%): Merit-based.
 - 100% Tuition Scholarship: ONLINE programs only.
 - Fees paid to UNIVERSITY ACCOUNT.
 
@@ -90,7 +90,7 @@ export const chatWithConsultant = async (history: { role: string, parts: { text:
       model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: LISA_KNOWLEDGE_BASE,
-        temperature: 0.7, 
+        temperature: 0.7,
       },
       history: history
     });
