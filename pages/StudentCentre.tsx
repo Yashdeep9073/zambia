@@ -11,6 +11,7 @@ import {
   Play, Pause, RotateCcw, Save, Loader
 } from 'lucide-react';
 import Footer from '../components/Footer';
+import WhatsAppFunnel from '../components/WhatsAppFunnel';
 
 // --- TYPES ---
 
@@ -696,6 +697,14 @@ const StudentCentre: React.FC<StudentCentreProps> = ({ onNavigate, onLogin }) =>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* WhatsApp Funnel Integration */}
+      <div className="max-w-7xl mx-auto px-4 mt-16 mb-20">
+        <WhatsAppFunnel 
+          title="Official Student Groups"
+          context="Join the official ZII community groups for your specific university and course."
+        />
       </div>
 
       {/* WIZARD MODAL */}

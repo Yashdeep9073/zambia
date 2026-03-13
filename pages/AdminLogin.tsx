@@ -28,7 +28,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onNavigate }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 relative overflow-hidden font-sans">
       {/* Dynamic Background */}
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070')] bg-cover bg-center opacity-10"></div>
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10"></div>
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-900/40"></div>
       
       {/* Decorative Grid */}

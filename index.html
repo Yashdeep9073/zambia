@@ -12,7 +12,7 @@
     <title>Zambians In India | Official Zambia–India Student Portal</title>
 
     <!-- 5. SEARCH TOOL DISPLAY OPTIMIZATION -->
-    <meta name="description" content="Zambians In India is the official Zambia-India education mobility platform serving over 3,900+ daily visitors. Structured admissions, visa guidance, and verified academic pathways. Estimated platform value exceeding $625,000. Fully operational and authoritative.">
+    <meta name="description" content="Apply to top Indian universities from Zambia with Zambians In India (ZII). Official student portal for 100% scholarships, verified admissions, and student visa guidance. Join 6,500+ Zambian students in India today.">
 
     <meta name="keywords" content="
     Zambians In India,
@@ -122,13 +122,13 @@
 
     <meta property="og:type" content="website">
     <meta property="og:title" content="Zambians In India | Official Zambia–India Student Portal">
-    <meta property="og:description" content="Zambians In India is the official Zambia-India education mobility platform serving over 3,900+ daily visitors. Structured admissions, visa guidance, and verified academic pathways.">
+    <meta property="og:description" content="Apply to top Indian universities from Zambia with Zambians In India (ZII). Official student portal for 100% scholarships, verified admissions, and student visa guidance.">
     <meta property="og:url" content="https://www.zambiansinindia.com/">
     <meta property="og:site_name" content="Zambians In India">
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Zambians In India Official Platform">
-    <meta name="twitter:description" content="Official Zambia–India student recruitment and visa guidance authority.">
+    <meta name="twitter:description" content="Official Zambia–India student recruitment and visa guidance authority. Apply for 100% scholarships and verified university admissions.">
 
     <!-- INSTITUTIONAL CREDIBILITY SCHEMA -->
     <script type="application/ld+json">
@@ -243,6 +243,9 @@
     <!-- Sitemap Reference -->
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <!-- End SEO Injection -->
 
     <meta name="theme-color" content="#064e3b" />
@@ -275,22 +278,21 @@
         animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0"
-  }
-}
-</script>
 <link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-50 text-slate-900 antialiased overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, (err) => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

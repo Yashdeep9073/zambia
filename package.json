@@ -11,8 +11,15 @@
   },
   "dependencies": {
     "@google/genai": "^1.38.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/papaparse": "^5.5.2",
+    "canvas-confetti": "^1.9.4",
     "firebase": "^12.10.0",
+    "framer-motion": "^12.35.1",
     "lucide-react": "^0.563.0",
+    "motion": "^12.35.1",
+    "papaparse": "^5.5.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "recharts": "^3.7.0"

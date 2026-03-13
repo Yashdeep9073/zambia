@@ -1,7 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const LISA_KNOWLEDGE_BASE = `
@@ -56,7 +56,7 @@ Guide the student to COMPLETE THE APPLICATION.
 `;
 
 export const generateUniversityAnalysis = async (profile: any): Promise<string> => {
-  if (!process.env.API_KEY) return "AI Analysis unavailable: API Key missing.";
+  if (!process.env.GEMINI_API_KEY) return "AI Analysis unavailable: API Key missing.";
 
   try {
     const model = 'gemini-3-flash-preview';
@@ -80,7 +80,7 @@ export const generateUniversityAnalysis = async (profile: any): Promise<string> 
 };
 
 export const chatWithConsultant = async (history: { role: string, parts: { text: string }[] }[], newMessage: string) => {
-  if (!process.env.API_KEY) {
+  if (!process.env.GEMINI_API_KEY) {
     // Fallback for demo without API key
     return "I am currently offline (API Key missing). Please contact Mr Mwale on WhatsApp at +260 762 523 854. 📱";
   }
@@ -90,7 +90,7 @@ export const chatWithConsultant = async (history: { role: string, parts: { text:
       model: 'gemini-3-flash-preview',
       config: {
         systemInstruction: LISA_KNOWLEDGE_BASE,
-        temperature: 0.7,
+        temperature: 0.7, 
       },
       history: history
     });

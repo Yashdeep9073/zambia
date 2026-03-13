@@ -19,7 +19,7 @@ const TourismPage: React.FC<TourismPageProps> = ({ onNavigate, onLogin }) => {
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* 1. HERO SECTION */}
       <div className="relative bg-slate-900 text-white min-h-[80vh] flex items-center justify-center overflow-hidden pt-20">
-         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2071')] bg-cover bg-center"></div>
+         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2071&auto=format&fit=crop')] bg-cover bg-center"></div>
          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
          
          <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
@@ -54,9 +54,9 @@ const TourismPage: React.FC<TourismPageProps> = ({ onNavigate, onLogin }) => {
             <h2 className="text-3xl font-bold text-center mb-12 text-slate-900">Trending Destinations</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
-                    { title: "The Golden Triangle", img: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076", desc: "Delhi, Agra (Taj Mahal), Jaipur." },
-                    { title: "Kerala Backwaters", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=2070", desc: "Houseboats, Ayurveda, Nature." },
-                    { title: "Goa Beaches", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=1974", desc: "Sun, Sand, Seafood, Nightlife." }
+                    { title: "The Golden Triangle", img: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076&auto=format&fit=crop", desc: "Delhi, Agra (Taj Mahal), Jaipur." },
+                    { title: "Kerala Backwaters", img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=2070&auto=format&fit=crop", desc: "Houseboats, Ayurveda, Nature." },
+                    { title: "Goa Beaches", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=1974&auto=format&fit=crop", desc: "Sun, Sand, Seafood, Nightlife." }
                 ].map((dest, i) => (
                     <div key={i} className="group relative rounded-2xl overflow-hidden shadow-lg h-80 cursor-pointer">
                         <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${dest.img})` }}></div>
@@ -124,7 +124,7 @@ const TourismPage: React.FC<TourismPageProps> = ({ onNavigate, onLogin }) => {
                     </button>
                 </div>
                 <div className="relative z-10 md:w-1/2">
-                    <img src="https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070" alt="Himalayas" className="rounded-2xl shadow-2xl border-4 border-white/20 transform rotate-2 hover:rotate-0 transition duration-500"/>
+                    <img src="https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070&auto=format&fit=crop" alt="Himalayas" className="rounded-2xl shadow-2xl border-4 border-white/20 transform rotate-2 hover:rotate-0 transition duration-500"/>
                 </div>
             </div>
          </div>

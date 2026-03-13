@@ -6,8 +6,12 @@ import {
   createApplication, 
   updateApplication, 
   getApplication, 
-  subscribeToApplication 
+  subscribeToApplication,
+  submitApplication,
+  initWaitingRoom
 } from '../src/services/dbService';
+import { trackStage, LifecycleStage } from '../src/lib/firebase/studentLifecycle';
+import { logAnalyticsEvent, AnalyticsEventType } from '../src/services/analyticsService';
 import { 
   FileText, Check, Upload, Banknote, Plane, Building, 
   Download, Activity, ShieldCheck, Target, ArrowRight,
@@ -429,10 +433,13 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
               
               if (currentUser) {
                   try {
-                      await createApplication(currentUser.uid, {
+                      const appId = await createApplication(currentUser.uid, {
                           ...profile,
                           studentNumber: uniqueId
                       });
+                      setProfile((p: any) => ({ ...p, appId, studentNumber: uniqueId }));
+                      await trackStage(appId, currentUser.uid, LifecycleStage.APPLY, profile.email, profile.name);
+                      await logAnalyticsEvent(currentUser.uid, AnalyticsEventType.REGISTRATION_STARTED);
                   } catch (e) {
                       console.error("Failed to create application in Firestore", e);
                   }
@@ -672,10 +679,25 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
                // Success
                setIsSubmitting(true);
                setSubmissionStage('flying');
+
+                // Real backend submission
+                const performSubmission = async () => {
+                    if (currentUser && profile.appId) {
+                        try {
+                            await submitApplication(profile.appId, currentUser.uid);
+                            await trackStage(profile.appId, currentUser.uid, LifecycleStage.SUBMITTED, profile.email, profile.name);
+                            await initWaitingRoom(currentUser.uid);
+                        } catch (e) {
+                            console.error("Submission failed", e);
+                        }
+                    }
+                };
+                
+                performSubmission();
                setTimeout(() => {
-                   setSubmissionStage('success');
                    setIsSubmitting(false);
-                   setShowShareModal(true);
+                    setSubmissionStage('success');
+                   onPhaseComplete(AppPhase.OFFER_MANAGEMENT);
                }, 4000);
            }
        };
@@ -911,7 +933,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
                                         disabled={!selectedProvince}
                                     >
                                         <option value="">Select Town</option>
-                                        {selectedProvince && ZAMBIA_LOCATIONS[selectedProvince].map(city => (<option key={city} value={city}>{city}</option>))}
+                                        {selectedProvince && ZAMBIA_LOCATIONS[selectedProvince]?.map(city => (<option key={city} value={city}>{city}</option>))}
                                     </select>
                                 </div>
                             ) : (
@@ -951,7 +973,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
                       </div>
                       <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4">
                          <button className="flex items-center text-slate-500 font-bold text-sm hover:text-emerald-600 order-2 md:order-1"><Save className="w-4 h-4 mr-2"/> Save & Continue Later</button>
-                         <button onClick={() => setActiveTab('academic')} className="btn-primary w-full md:w-auto order-1 md:order-2">Next Step</button>
+                         <button onClick={() => { setActiveTab('academic'); logAnalyticsEvent(currentUser?.uid, AnalyticsEventType.FORM_SECTION_COMPLETED, { section: 'personal' }); }} className="btn-primary w-full md:w-auto order-1 md:order-2">Next Step</button>
                       </div>
                    </div>
                 )}
@@ -961,7 +983,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
                       <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center"><GraduationCap className="w-5 h-5 mr-2 text-emerald-600"/> Academic History</h3>
                       <p className="text-sm text-slate-500 italic bg-blue-50 p-2 rounded">Instruction: Use the high school(s) shown on your Statement of Results.</p>
                       
-                      {profile.academicHistory.institutions.map((inst: any, idx: number) => (
+                      {profile.academicHistory?.institutions?.map((inst: any, idx: number) => (
                           <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200 relative mb-4">
                               {idx > 0 && <button onClick={() => removeInstitution(idx)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4"/></button>}
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1002,7 +1024,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
 
                       <div className="flex justify-between pt-4">
                          <button onClick={() => setActiveTab('personal')} className="text-slate-500 font-bold hover:text-slate-800">Back</button>
-                         <button onClick={() => setActiveTab('parent')} className="btn-primary">Next Step</button>
+                         <button onClick={() => { setActiveTab('parent'); logAnalyticsEvent(currentUser?.uid, AnalyticsEventType.FORM_SECTION_COMPLETED, { section: 'academic' }); }} className="btn-primary">Next Step</button>
                       </div>
                    </div>
                 )}
@@ -1078,7 +1100,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
 
                       <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-4">
                          <button className="flex items-center text-slate-500 font-bold text-sm hover:text-emerald-600 order-2 md:order-1"><Save className="w-4 h-4 mr-2"/> Save & Continue Later</button>
-                         <button onClick={() => setActiveTab('uploads')} className="btn-primary w-full md:w-auto order-1 md:order-2">Next Step</button>
+                         <button onClick={() => { setActiveTab('uploads'); logAnalyticsEvent(currentUser?.uid, AnalyticsEventType.FORM_SECTION_COMPLETED, { section: 'parent' }); }} className="btn-primary w-full md:w-auto order-1 md:order-2">Next Step</button>
                       </div>
                    </div>
                 )}
@@ -1156,7 +1178,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
 
     // PHASE 3: WAITING ROOM
     if (currentPhase === AppPhase.OFFER_MANAGEMENT) {
-        return <WaitingRoom onPhaseComplete={onPhaseComplete} />;
+        return <WaitingRoom onPhaseComplete={onPhaseComplete} onNavigate={onNavigate || (() => {})} />;
     }
 
     // PHASE 4: OFFER LETTER (NEW INDEPENDENT PHASE)
@@ -1254,7 +1276,7 @@ const DashboardFlow: React.FC<DashboardFlowProps> = ({ currentPhase, onPhaseComp
                       <div className="relative group cursor-pointer">
                           <div className="w-16 h-16 bg-slate-200 rounded-full overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
                               {profile.uploadedDocuments?.includes('photo') ? (
-                                  <img src="https://picsum.photos/200" alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                  <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                               ) : (
                                   <User className="w-8 h-8 text-slate-400" />
                               )}

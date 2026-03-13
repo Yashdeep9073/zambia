@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Lock, Clock, Award, Video, Info, FileText, CheckCircle, 
   Users, Share2, Camera, AlertTriangle, Zap, X, ChevronRight,
@@ -6,9 +6,12 @@ import {
   HelpCircle, RefreshCw, Facebook, Copy, Youtube, GraduationCap, Play,
   Mic, StopCircle, Save, Image as ImageIcon, Download, MonitorPlay,
   User, Loader, Unlock, MapPin, ExternalLink, Briefcase, Key, Circle, Wand2, Upload,
-  CreditCard, ShieldCheck
+  CreditCard, ShieldCheck, Mail, Trophy, Send, Smartphone, Instagram, Linkedin,
+  ArrowRight, Sparkles, Gift, Check, Building, Plane, Activity, BookOpen, DollarSign,
+  School, MessageCircle, Home, Heart
 } from 'lucide-react';
-import { AppPhase } from '../types';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
+import { AppPhase, PublicView } from '../types';
 import PaymentModal from '../components/PaymentModal';
 import { useAuth } from '../src/contexts/AuthContext';
 import { 
@@ -22,7 +25,7 @@ interface ActivityData {
   id: string;
   status: 'locked' | 'pending' | 'viewed' | 'completed';
   score?: number;
-  data?: any; // Store user inputs like financial estimates
+  data?: any;
 }
 
 interface WaitingRoomState {
@@ -35,70 +38,40 @@ interface WaitingRoomState {
   isPriority: boolean;
   hasPaidExam: boolean;
   hasPaidFastTrack: boolean;
+  isOffer1Opened: boolean;
+  isOffer2Unlocked: boolean;
+  isOffer3Unlocked: boolean;
+  isOffer4Unlocked: boolean;
+  isFinalOfferUnlocked: boolean;
+  finalOfferPasskey: string;
+  isActionRequiredExpanded: boolean;
+  groupClicks: Record<number, number>;
 }
 
 interface WaitingRoomProps {
   onPhaseComplete: (phase: AppPhase) => void;
+  onNavigate: (view: PublicView) => void;
 }
 
-// --- CONFIG & DATA ---
-const REQUIRED_REFERRALS = 3;
-
-// 1. QUIZ DATA (50 Questions)
-const RAW_QUIZ_QUESTIONS = [
-  { q: "India’s capital city", options: ["Mumbai", "New Delhi", "Kolkata", "Bangalore"], a: "New Delhi" },
-  { q: "Official currency", options: ["Rupee", "Dollar", "Pound", "Euro"], a: "Rupee" },
-  { q: "National language", options: ["Hindi", "English", "Bengali", "Tamil"], a: "Hindi" },
-  { q: "Indian flag colors (bands)", options: ["2", "3", "4", "5"], a: "3" },
-  { q: "Largest city", options: ["Chennai", "Delhi", "Mumbai", "Bangalore"], a: "Mumbai" },
-  { q: "Taj Mahal location", options: ["Delhi", "Agra", "Jaipur", "Mumbai"], a: "Agra" },
-  { q: "Independence year", options: ["1945", "1947", "1950", "1960"], a: "1947" },
-  { q: "Longest river", options: ["Yamuna", "Godavari", "Ganges", "Krishna"], a: "Ganges" },
-  { q: "National animal", options: ["Lion", "Tiger", "Elephant", "Peacock"], a: "Tiger" },
-  { q: "Festival of lights", options: ["Holi", "Diwali", "Eid", "Navratri"], a: "Diwali" },
-  { q: "Land of Rising Sun (Indian State)", options: ["Arunachal Pradesh", "Kerala", "Punjab", "Rajasthan"], a: "Arunachal Pradesh" },
-  { q: "National flower", options: ["Rose", "Lotus", "Marigold", "Jasmine"], a: "Lotus" },
-  { q: "Largest state by area", options: ["Rajasthan", "Maharashtra", "Uttar Pradesh", "Madhya Pradesh"], a: "Rajasthan" },
-  { q: "Currency symbol", options: ["₹", "$", "£", "€"], a: "₹" },
-  { q: "International membership", options: ["EU", "UN", "NATO", "ASEAN"], a: "UN" },
-  { q: "Silicon Valley of India", options: ["Bangalore", "Hyderabad", "Pune", "Chennai"], a: "Bangalore" },
-  { q: "Current Prime Minister (2024)", options: ["Narendra Modi", "Rahul Gandhi", "Amit Shah", "Manmohan Singh"], a: "Narendra Modi" },
-  { q: "National Bird", options: ["Peacock", "Parrot", "Eagle", "Swan"], a: "Peacock" },
-  { q: "National Anthem", options: ["Vande Mataram", "Jana Gana Mana", "Sare Jahan Se Acha", "Maa Tujhe Salaam"], a: "Jana Gana Mana" },
-  { q: "National Sport (De facto)", options: ["Cricket", "Hockey", "Football", "Kabaddi"], a: "Hockey" },
-  { q: "Father of the Nation", options: ["Subhash Chandra Bose", "Mahatma Gandhi", "Bhagat Singh", "Sardar Patel"], a: "Mahatma Gandhi" },
-  { q: "First Prime Minister", options: ["Jawaharlal Nehru", "Indira Gandhi", "Lal Bahadur Shastri", "Rajendra Prasad"], a: "Jawaharlal Nehru" },
-  { q: "Space Agency", options: ["NASA", "ISRO", "ESA", "Roscosmos"], a: "ISRO" },
-  { q: "Film Industry Hub", options: ["Tollywood", "Bollywood", "Kollywood", "Sandalwood"], a: "Bollywood" },
-  { q: "Origin of Yoga", options: ["China", "India", "Nepal", "Thailand"], a: "India" },
-  { q: "Invention of Zero", options: ["Aryabhata", "Brahmagupta", "Ramanujan", "Bhaskara"], a: "Aryabhata" },
-  { q: "Origin of Chess", options: ["Persia", "India", "China", "Greece"], a: "India" },
-  { q: "Spice Capital of India", options: ["Kerala", "Tamil Nadu", "Andhra Pradesh", "Karnataka"], a: "Kerala" },
-  { q: "Pink City", options: ["Jodhpur", "Jaipur", "Udaipur", "Bikaner"], a: "Jaipur" },
-  { q: "God's Own Country", options: ["Goa", "Kerala", "Himachal Pradesh", "Uttarakhand"], a: "Kerala" },
-  { q: "Smallest State", options: ["Sikkim", "Goa", "Tripura", "Manipur"], a: "Goa" },
-  { q: "Highest Mountain Peak", options: ["K2", "Kanchenjunga", "Nanda Devi", "Kamet"], a: "Kanchenjunga" },
-  { q: "National Tree", options: ["Neem", "Banyan", "Peepal", "Mango"], a: "Banyan" },
-  { q: "National Fruit", options: ["Banana", "Mango", "Apple", "Guava"], a: "Mango" },
-  { q: "Constitution Length", options: ["Shortest", "Longest written", "Medium", "Unwritten"], a: "Longest written" },
-  { q: "Republic Day", options: ["Aug 15", "Jan 26", "Oct 2", "Nov 14"], a: "Jan 26" },
-  { q: "Population Rank", options: ["1st", "2nd", "3rd", "4th"], a: "1st" },
-  { q: "Continent", options: ["Africa", "Europe", "Asia", "Australia"], a: "Asia" },
-  { q: "Ocean to the South", options: ["Pacific", "Atlantic", "Indian", "Arctic"], a: "Indian" },
-  { q: "Northern Neighbor", options: ["Sri Lanka", "China", "Maldives", "Thailand"], a: "China" },
-  { q: "Western Neighbor", options: ["Bangladesh", "Myanmar", "Pakistan", "Nepal"], a: "Pakistan" },
-  { q: "Major Religion", options: ["Hinduism", "Islam", "Christianity", "Sikhism"], a: "Hinduism" },
-  { q: "Iron Man of India", options: ["Sardar Patel", "Nehru", "Gandhi", "Bose"], a: "Sardar Patel" },
-  { q: "Missile Man of India", options: ["Homi Bhabha", "Vikram Sarabhai", "APJ Abdul Kalam", "CV Raman"], a: "APJ Abdul Kalam" },
-  { q: "White Revolution related to", options: ["Milk", "Cotton", "Rice", "Eggs"], a: "Milk" },
-  { q: "Green Revolution related to", options: ["Forests", "Agriculture", "Industry", "Energy"], a: "Agriculture" },
-  { q: "IT Hub of India", options: ["Mumbai", "Delhi", "Hyderabad", "Kolkata"], a: "Hyderabad" },
-  { q: "Financial Capital", options: ["Delhi", "Mumbai", "Chennai", "Bangalore"], a: "Mumbai" },
-  { q: "Oldest Living City", options: ["Varanasi", "Patna", "Madurai", "Ujjain"], a: "Varanasi" },
-  { q: "Tea Capital", options: ["Darjeeling", "Assam", "Ooty", "Munnar"], a: "Assam" }
+// --- DATA ---
+const WHATSAPP_GROUPS = [
+  { name: "Group 1", url: "https://chat.whatsapp.com/EdxWjp14zgK51vx9O9fMRk?mode=gi_t" },
+  { name: "Group 2", url: "https://chat.whatsapp.com/ECYz3m6HdP53DnuW5dOqqI?mode=gi_t" },
+  { name: "Group 3", url: "https://chat.whatsapp.com/LHgVNYYUTQS7IWJvaTAWnj?mode=gi_t" },
+  { name: "Group 4", url: "https://chat.whatsapp.com/EfgaeIqkA0zHY7UedljP3G?mode=gi_t" },
+  { name: "Group 5", url: "https://chat.whatsapp.com/CMUCTIu4jqA2q97XSCQGFK?mode=gi_t" },
 ];
 
-// 3. FAQ DATA (30 Items)
+const APPLICATION_STAGES = [
+  { id: 1, title: "Application Submitted", desc: "Your initial details have been received.", icon: FileText },
+  { id: 2, title: "Document Verification", desc: "Our team is checking your uploaded results.", icon: ShieldCheck },
+  { id: 3, title: "University Review", desc: "Partner universities are assessing your profile.", icon: Building },
+  { id: 4, title: "Scholarship Evaluation", desc: "Determining the best scholarship percentage for you.", icon: Award },
+  { id: 5, title: "Offer Released", desc: "Your official offer letter is generated.", icon: Mail },
+  { id: 6, title: "Visa Processing", desc: "Guidance for your Indian student visa application.", icon: Globe },
+  { id: 7, title: "Travel Preparation", desc: "Booking flights and packing for your journey.", icon: Plane },
+];
+
 const FAQ_ITEMS = [
   { q: "How do I start my application?", a: "Visit www.zambiansinindia.com → Click “Apply Now” → Fill the “Start Here” registration." },
   { q: "What is a ZII Number?", a: "A unique student ID generated during registration; required for tracking applications." },
@@ -106,48 +79,46 @@ const FAQ_ITEMS = [
   { q: "Can I apply for a scholarship?", a: "Yes, based on academic merit. Scholarships are automatically considered." },
   { q: "What documents are required?", a: "Grade 12 results, NRC/passport, personal essay, photo." },
   { q: "Can my parents track my app?", a: "Yes, once logged in, parent dashboard shows application progress." },
-  { q: "How do I upload results?", a: "Upload all documents in one file or multiple files using the uploads section." },
-  { q: "Is it safe to travel to India?", a: "Yes, ZII partners with accredited universities; predeparture guidance provided." },
-  { q: "How do I accept an offer?", a: "Click the “Accept” button on the Offer Letter page." },
-  { q: "How do I book my flight?", a: "Guidance and trusted travel links provided after visa approval." },
-  { q: "Can I choose my university?", a: "You can select preferences, but final offers depend on university review." },
-  { q: "What is 'Start Here'?", a: "The first stage of the student lifecycle to create your profile." },
-  { q: "How are scholarships awarded?", a: "Based on merit and available funding." },
-  { q: "Tuition payment options?", a: "Paid directly to the university; ZII does not collect tuition fees." },
-  { q: "Who reviews my application?", a: "Partner universities manually review applications." },
-  { q: "How do I change contact info?", a: "Update in profile settings; admin approval required." },
-  { q: "Can I edit my essay?", a: "No; essays must be final upon submission." },
-  { q: "Submission deadlines?", a: "Yes; each intake has a defined deadline on the website." },
-  { q: "Track visa status?", a: "Yes, via your student dashboard once submitted." },
-  { q: "Pre-departure guidance?", a: "Access guides in the Pre-departure section." },
-  { q: "Failed the Quiz?", a: "Retry as many times as needed." },
-  { q: "Share link multiple times?", a: "Yes, encourage 3 friends to complete applications." },
-  { q: "How many friends to share?", a: "Minimum of 3 friends for full points." },
-  { q: "Access Waiting Room?", a: "Automatically redirected after submission." },
-  { q: "Data safety?", a: "Yes; fully encrypted and secured in ZII database." },
-  { q: "Multiple courses?", a: "Yes, separate applications required." },
-  { q: "Upload multiple results?", a: "Use the multi-file upload feature." },
-  { q: "Parent unavailable?", a: "Alternative recommendation allowed." },
-  { q: "Progress tracking?", a: "Progress bar shows completed tasks." },
-  { q: "Total duration?", a: "Approx 3–6 months from application to departure." }
 ];
 
-// --- ACTIVITY DEFINITIONS ---
-const ALL_ACTIVITIES = [
-  { id: 'status_tracker', title: "Application Status", desc: "Track live status", icon: FileText, color: 'text-orange-500', bg: 'bg-orange-100', points: 10, mandatory: false },
-  { id: 'about_india_quiz', title: "100% Scholarship Exam", desc: "Take the merit exam", icon: Award, color: 'text-blue-500', bg: 'bg-blue-100', points: 250, mandatory: true },
-  { id: 'share_platform', title: "Help 3 Friends Apply", desc: "Share referral link", icon: Share2, color: 'text-green-500', bg: 'bg-green-100', points: 190, mandatory: true },
-  { id: 'faq_section', title: "Most Asked Questions", desc: "Read student FAQs", icon: Info, color: 'text-purple-500', bg: 'bg-purple-100', points: 150, mandatory: true },
-  { id: 'personal_essay', title: "Personal Essay", desc: "Tell your story", icon: PenTool, color: 'text-pink-500', bg: 'bg-pink-100', points: 15 },
-  { id: 'video_intro', title: "Video Challenge", desc: "Introduce yourself", icon: Video, color: 'text-red-500', bg: 'bg-red-100', points: 15 },
-  { id: 'profile_pic', title: "Photo Challenge", desc: "Upload clear photo", icon: Camera, color: 'text-indigo-500', bg: 'bg-indigo-100', points: 5 },
-  { id: 'parent_info', title: "Parent / Sponsor Pack", desc: "Add guardian info", icon: Users, color: 'text-teal-500', bg: 'bg-teal-100', points: 5 },
-  { id: 'financial_estimator', title: "Financial Estimator", desc: "Budget planner", icon: Calculator, color: 'text-yellow-500', bg: 'bg-yellow-100', points: 5 },
-];
+const Confetti = () => {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[200]">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            top: -20, 
+            left: `${Math.random() * 100}%`,
+            rotate: 0,
+            scale: 0
+          }}
+          animate={{ 
+            top: '110%', 
+            rotate: 360,
+            scale: [0, 1, 1, 0],
+            left: `${Math.random() * 100}%`
+          }}
+          transition={{ 
+            duration: 2 + Math.random() * 2,
+            ease: "linear",
+            repeat: 0
+          }}
+          className="absolute w-3 h-3 rounded-sm"
+          style={{ 
+            backgroundColor: ['#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6'][Math.floor(Math.random() * 5)] 
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
-const WaitingRoom: React.FC<WaitingRoomProps> = ({ onPhaseComplete }) => {
+const WaitingRoom: React.FC<WaitingRoomProps> = ({ onPhaseComplete, onNavigate }) => {
   const { currentUser } = useAuth();
-  // --- STATE ---
+  const profile = currentUser || { name: 'Student', programInterest: '' };
+  
+  const [hasSeenSubmissionMessage, setHasSeenSubmissionMessage] = useState(false);
   const [state, setState] = useState<WaitingRoomState>({
     activities: {},
     points: 0,
@@ -158,61 +129,52 @@ const WaitingRoom: React.FC<WaitingRoomProps> = ({ onPhaseComplete }) => {
     isPriority: false,
     hasPaidExam: false,
     hasPaidFastTrack: false,
+    isOffer1Opened: false,
+    isOffer2Unlocked: false,
+    isOffer3Unlocked: false,
+    isOffer4Unlocked: false,
+    isFinalOfferUnlocked: false,
+    finalOfferPasskey: '',
+    isActionRequiredExpanded: false,
+    groupClicks: { 1: 950, 2: 820, 3: 450, 4: 0, 5: 0 },
   });
 
+  const [timeLeft, setTimeLeft] = useState({ h: 72, m: 0, s: 0 });
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [modalTitle, setModalTitle] = useState('');
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentService, setPaymentService] = useState<{name: string, amount: number, id: string} | null>(null);
-  
-  // Transient Form States
-  const [essayForm, setEssayForm] = useState({ about: '', scholarship: '', contribution: '' });
-  const [timeLeft, setTimeLeft] = useState<{h:number, m:number, s:number}>({ h: 72, m: 0, s: 0 });
-  
-  // Quiz State
-  const [shuffledQuestions, setShuffledQuestions] = useState<any[]>([]);
-  const [activeQuizQ, setActiveQuizQ] = useState(0);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizFinished, setQuizFinished] = useState(false);
-  const [quizAttempts, setQuizAttempts] = useState(0);
+  const [isUniversityPopupOpen, setIsUniversityPopupOpen] = useState(false);
+  const [selectedUni, setSelectedUni] = useState({ name: 'CT University', scholarship: '30%', website: 'https://ctuniversity.in' });
+  const [isAcceptPromptOpen, setIsAcceptPromptOpen] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showOffer2ShareModal, setShowOffer2ShareModal] = useState(false);
 
-  // FAQ State
-  const [activeFAQIndex, setActiveFAQIndex] = useState<number | null>(null);
-
-  // Financial State
-  const [financeForm, setFinanceForm] = useState({ 
-    passport: '320', 
-    visa: '1350', 
-    medical: '1000', 
-    docCert: '250',
-    yellowFever: '800',
-    airTicket: '15000',
-    regFee: '500',
-    food: '150', 
-    transport: '50',
-    accom: '100', 
-    books: '30',
-    laundry: '20',
-    internet: '20',
-    allowance: '1000',
-    tuition: '2500'
+  // Scroll Progress for Graduation Cap
+  const { scrollYProgress } = useScroll();
+  const scaleY = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
   });
 
-  // New Challenge States
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [masterPasskey, setMasterPasskey] = useState('');
-  const [passkeyError, setPasskeyError] = useState(false);
+  const capTop = useTransform(scaleY, [0, 1], ["0%", "100%"]);
+
+  const handleGroupClick = (groupIndex: number, url: string) => {
+    setState(prev => ({
+      ...prev,
+      groupClicks: {
+        ...prev.groupClicks,
+        [groupIndex]: (prev.groupClicks[groupIndex] || 0) + 1
+      }
+    }));
+    window.open(url, '_blank');
+  };
 
   // Timer Effect
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev.h === 0 && prev.m === 0 && prev.s === 0) {
-            clearInterval(interval);
-            onPhaseComplete(AppPhase.OFFER_LETTER);
-            return prev;
-        }
+        if (prev.h === 0 && prev.m === 0 && prev.s === 0) return prev;
         if (prev.s > 0) return { ...prev, s: prev.s - 1 };
         if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
         if (prev.h > 0) return { ...prev, h: prev.h - 1, m: 59, s: 59 };
@@ -220,592 +182,1288 @@ const WaitingRoom: React.FC<WaitingRoomProps> = ({ onPhaseComplete }) => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [onPhaseComplete]);
+  }, []);
 
-  // Initialize Quiz
-  useEffect(() => {
-    if (activeModal === 'about_india_quiz' && shuffledQuestions.length === 0) {
-      setShuffledQuestions([...RAW_QUIZ_QUESTIONS].sort(() => 0.5 - Math.random()));
-      setActiveQuizQ(0);
-      setQuizScore(0);
-      setQuizFinished(false);
-    }
-  }, [activeModal]);
-
-  const closeModal = () => {
-    setActiveModal(null);
-  };
-
-  const completeActivity = async (id: string, points: number) => {
-    setState(prev => {
-      const isNew = !prev.activities[id]?.status || prev.activities[id].status !== 'completed';
-      return {
-        ...prev,
-        points: isNew ? prev.points + points : prev.points,
-        activities: {
-          ...prev.activities,
-          [id]: { id, status: 'completed', score: 100 }
-        }
-      };
-    });
-    
-    if (currentUser) {
-        await updateWaitingRoomStatus(currentUser.uid, `activities.${id}`, 'completed');
-        // Ideally we should also update points in Firestore, but updateWaitingRoomStatus is generic.
-        // For now, we assume the backend or a cloud function might recalculate points, 
-        // or we extend updateWaitingRoomStatus to handle points.
-        // Given the constraints, I'll just update the activity status.
-    }
-    closeModal();
-  };
+  const tasksCompleted = Object.values(state.activities).filter((a: ActivityData) => a.status === 'completed').length;
+  const totalTasks = 12;
 
   const handlePaymentSuccess = async (tid: string) => {
     setPaymentModalOpen(false);
-    
     if (currentUser && paymentService) {
-        try {
-            // Record Payment in Firestore
-            await initiatePayment(currentUser.uid, paymentService.amount, paymentService.id);
-            
-            if (paymentService.id === 'priority_upgrade') {
-                setState(prev => ({ ...prev, isPriority: true }));
-                await updateWaitingRoomStatus(currentUser.uid, 'isPriority', 'true');
-                // Unlock offer letter automatically
-                onPhaseComplete(AppPhase.OFFER_LETTER);
-            } else if (paymentService.id === 'scholarship_exam') {
-                setState(prev => ({ ...prev, hasPaidExam: true }));
-                await updateWaitingRoomStatus(currentUser.uid, 'hasPaidExam', 'true');
-                // Open quiz modal
-                setActiveModal('about_india_quiz');
-                setModalTitle('100% Full Scholarship Exam');
-            } else if (paymentService.id === 'fast_track') {
-                setState(prev => ({ ...prev, hasPaidFastTrack: true }));
-                await updateWaitingRoomStatus(currentUser.uid, 'hasPaidFastTrack', 'true');
-            }
-        } catch (e) {
-            console.error("Error recording payment", e);
-        }
+      await initiatePayment(currentUser.uid, paymentService.amount, paymentService.id);
+      if (paymentService.id === 'fast_track') {
+        setState(prev => ({ ...prev, hasPaidFastTrack: true }));
+        completeTask('fast_track');
+      }
     }
-
-    alert(`Payment Successful! Transaction ID: ${tid}`);
   };
+
+  const completeTask = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      activities: {
+        ...prev.activities,
+        [id]: { id, status: 'completed' }
+      }
+    }));
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+  };
+
+  const handleOffer2Share = (platform: string) => {
+    const shareUrl = `https://www.zambiansinindia.com/apply?ref=${profile?.studentNumber || 'student123'}`;
+    
+    let intentUrl = '';
+    if (platform === 'whatsapp') intentUrl = `https://api.whatsapp.com/send?text=Check out these scholarships! ${shareUrl}`;
+    if (platform === 'facebook') intentUrl = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+    if (platform === 'linkedin') intentUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`;
+    if (platform === 'sms') intentUrl = `sms:?body=Check out these scholarships! ${shareUrl}`;
+    
+    // Open share link
+    window.open(intentUrl, '_blank');
+
+    // Trigger local success event & unlock flow
+    setTimeout(() => {
+      setShowOffer2ShareModal(false);
+      setState(prev => ({ ...prev, isOffer2Unlocked: true }));
+      completeTask('share_offer_2');
+      
+      // Display Aditya University popup
+      setSelectedUni({ name: 'Aditya University', scholarship: '50%', website: 'https://aditya.ac.in' });
+      setIsUniversityPopupOpen(true);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    }, 1500);
+  };
+
+  const handleShare = (offerId: number) => {
+    // Simulate sharing
+    if (offerId === 2) setState(prev => ({ ...prev, isOffer2Unlocked: true }));
+    if (offerId === 3) setState(prev => ({ ...prev, isOffer3Unlocked: true }));
+    completeTask(`share_offer_${offerId}`);
+  };
+
+  const OfferCard = ({ 
+    university, 
+    scholarship, 
+    requirement, 
+    isUnlocked, 
+    isOpened,
+    onClick,
+    onLockedClick,
+    image,
+    rating = 5,
+    showRibbon = false,
+    ribbonText = "Recommended",
+    ribbonColor = "bg-orange-500 text-white",
+    buttonText = "Click Me To See Offer",
+    lockedButtonText = "Offer Locked",
+    lockedButtonClass = "bg-slate-100 text-slate-400 cursor-not-allowed"
+  }: { 
+    university: string, 
+    scholarship: string, 
+    requirement: string,
+    isUnlocked: boolean,
+    isOpened: boolean,
+    onClick: () => void,
+    onLockedClick?: () => void,
+    image: string,
+    rating?: number,
+    showRibbon?: boolean,
+    ribbonText?: string,
+    ribbonColor?: string,
+    buttonText?: string,
+    lockedButtonText?: string,
+    lockedButtonClass?: string
+  }) => (
+    <div className="relative group h-full">
+      <div className={`bg-white rounded-[2.5rem] overflow-hidden shadow-xl border border-slate-200 h-full flex flex-col transition-all duration-500 ${!isUnlocked && !onLockedClick ? 'grayscale opacity-75' : 'hover:shadow-2xl hover:-translate-y-2'}`}>
+        {/* Ribbon */}
+        {showRibbon && (
+          <div className={`absolute top-6 -left-10 ${ribbonColor} px-12 py-1 font-black text-[10px] uppercase tracking-widest -rotate-45 z-20 shadow-lg`}>
+            {ribbonText}
+          </div>
+        )}
+
+        {/* University Photo */}
+        <div className="relative h-48 overflow-hidden">
+          <img 
+            src={image} 
+            alt={university} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          
+          {/* Requirement Badge if Locked */}
+          {!isUnlocked && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px]">
+              <div className="bg-white/90 px-4 py-2 rounded-full flex items-center gap-2 shadow-xl">
+                <Lock className="w-4 h-4 text-orange-500" />
+                <span className="text-[10px] font-black text-slate-900 uppercase">{requirement}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-6 flex flex-col flex-1 text-center">
+          <h3 className="text-xl font-black text-slate-900 mb-1 line-clamp-1">{university}</h3>
+          <p className="text-emerald-600 font-bold mb-2">{scholarship} Scholarship</p>
+          
+          {/* Star Rating */}
+          <div className="flex justify-center gap-1 mb-6">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className={`w-4 h-4 ${i < rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}`} />
+            ))}
+          </div>
+
+          <div className="mt-auto">
+            <button 
+              onClick={isUnlocked ? onClick : (onLockedClick || undefined)}
+              disabled={!isUnlocked && !onLockedClick}
+              className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition transform active:scale-95 flex items-center justify-center gap-2 ${isUnlocked ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg' : lockedButtonClass}`}
+            >
+              {isUnlocked ? (
+                <>
+                  <Unlock className="w-4 h-4" /> {buttonText}
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" /> {lockedButtonText}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   const openPayment = (service: string, amount: number, id: string) => {
     setPaymentService({ name: service, amount, id });
     setPaymentModalOpen(true);
   };
 
-  // --- RENDER HELPERS ---
-
-  const renderQuiz = () => {
-    if (!state.hasPaidExam) {
-      return (
-        <div className="p-8 text-center">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Award className="w-10 h-10 text-blue-600" />
-          </div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">100% Full Scholarship Exam</h3>
-          <p className="text-slate-600 mb-6">Take the ZII Scholarship Merit Exam to improve scholarship competitiveness. This is the test to guarantee a full 100% scholarship to go and study in India.</p>
-          
-          <div className="bg-slate-50 p-6 rounded-xl text-left space-y-3 mb-8 border border-slate-200">
-            <h4 className="font-bold text-slate-800 border-b pb-2 mb-2">Exam Rules:</h4>
-            <div className="flex items-center text-sm text-slate-600"><Clock className="w-4 h-4 mr-2 text-orange-500"/> 60-question timed exam</div>
-            <div className="flex items-center text-sm text-slate-600"><CheckCircle className="w-4 h-4 mr-2 text-green-500"/> Score certificate included</div>
-            <div className="flex items-center text-sm text-slate-600"><AlertTriangle className="w-4 h-4 mr-2 text-red-500"/> Max 4 attempts allowed</div>
-            <div className="flex items-center text-sm text-slate-600"><Zap className="w-4 h-4 mr-2 text-yellow-500"/> 60 seconds per question</div>
-          </div>
-
-          <button 
-            onClick={() => { closeModal(); openPayment('100% Scholarship Exam', 250, 'scholarship_exam'); }}
-            className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg flex items-center justify-center"
-          >
-            Unlock Exam Now – K250
-          </button>
-          <p className="text-xs text-slate-400 mt-4">Unlocks Offer Letter automatically upon completion.</p>
-        </div>
-      );
-    }
-
-    if (quizFinished) {
-      return (
-        <div className="text-center p-8">
-          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Award className="w-10 h-10 text-blue-600" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">Exam Completed!</h3>
-          <p className="text-slate-600 mb-6">You scored {quizScore} out of {shuffledQuestions.length}</p>
-          <button 
-            onClick={async () => {
-              if (currentUser) {
-                  await recordExamAttempt(currentUser.uid, 'scholarship_exam_2026', quizScore, {
-                      correct: quizScore,
-                      wrong: shuffledQuestions.length - quizScore,
-                      timeTaken: 0, // Placeholder
-                      startedAt: new Date() // Placeholder
-                  });
-                  await updateWaitingRoomStatus(currentUser.uid, 'examStatus', 'Completed');
-              }
-              completeActivity('about_india_quiz', 250);
-              onPhaseComplete(AppPhase.OFFER_LETTER);
-            }}
-            className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700"
-          >
-            Claim Certificate & Unlock Offer
-          </button>
-        </div>
-      );
-    }
-
-    const q = shuffledQuestions[activeQuizQ];
-    if (!q) return <div>Loading...</div>;
-
-    return (
-      <div className="p-4">
-        <div className="flex justify-between text-xs font-bold text-slate-400 mb-4">
-          <span>Question {activeQuizQ + 1} of {shuffledQuestions.length}</span>
-          <span>Score: {quizScore}</span>
-        </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-6">{q.q}</h3>
-        <div className="space-y-3">
-          {q.options.map((opt: string) => (
-            <button
-              key={opt}
-              onClick={() => {
-                if (opt === q.a) setQuizScore(s => s + 1);
-                if (activeQuizQ < shuffledQuestions.length - 1) {
-                  setActiveQuizQ(q => q + 1);
-                } else {
-                  setQuizFinished(true);
-                }
-              }}
-              className="w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-blue-50 hover:border-blue-300 font-medium transition"
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderFinancial = () => {
-    const upfront = Number(financeForm.passport) + Number(financeForm.visa) + Number(financeForm.medical) + Number(financeForm.docCert) + Number(financeForm.yellowFever) + Number(financeForm.airTicket) + Number(financeForm.regFee);
-    const monthlyLiving = Number(financeForm.food) + Number(financeForm.transport) + Number(financeForm.accom) + Number(financeForm.books) + Number(financeForm.laundry) + Number(financeForm.internet) + (Number(financeForm.allowance)/20); // Converting ZMW allowance to USD approx for total
-    const totalYear1 = (Number(financeForm.tuition) * 20) + upfront + (monthlyLiving * 12 * 20); // Approx conversion for display
-
-    return (
-      <div className="p-4">
-        <div className="bg-yellow-50 p-4 rounded-xl mb-6 text-sm text-yellow-800">
-          <Info className="w-4 h-4 inline mr-2"/>
-          Estimate your costs. Tuition is paid to university, not ZII.
-        </div>
-        
-        <h4 className="font-bold text-slate-700 mb-3 border-b pb-2">Application Stage Costs (ZMW)</h4>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div><label className="text-xs font-bold text-slate-500">Passport</label><input type="number" className="w-full p-2 border rounded" value={financeForm.passport} onChange={e => setFinanceForm({...financeForm, passport: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Visa</label><input type="number" className="w-full p-2 border rounded" value={financeForm.visa} onChange={e => setFinanceForm({...financeForm, visa: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Medical</label><input type="number" className="w-full p-2 border rounded" value={financeForm.medical} onChange={e => setFinanceForm({...financeForm, medical: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Doc Cert.</label><input type="number" className="w-full p-2 border rounded" value={financeForm.docCert} onChange={e => setFinanceForm({...financeForm, docCert: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Yellow Fever</label><input type="number" className="w-full p-2 border rounded" value={financeForm.yellowFever} onChange={e => setFinanceForm({...financeForm, yellowFever: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Air Ticket (Est)</label><input type="number" className="w-full p-2 border rounded" value={financeForm.airTicket} onChange={e => setFinanceForm({...financeForm, airTicket: e.target.value})} /></div>
-        </div>
-
-        <h4 className="font-bold text-slate-700 mb-3 border-b pb-2">Monthly India Stay (USD)</h4>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div><label className="text-xs font-bold text-slate-500">Accomodation</label><input type="number" className="w-full p-2 border rounded" value={financeForm.accom} onChange={e => setFinanceForm({...financeForm, accom: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Food</label><input type="number" className="w-full p-2 border rounded" value={financeForm.food} onChange={e => setFinanceForm({...financeForm, food: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Transport</label><input type="number" className="w-full p-2 border rounded" value={financeForm.transport} onChange={e => setFinanceForm({...financeForm, transport: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Books/Misc</label><input type="number" className="w-full p-2 border rounded" value={financeForm.books} onChange={e => setFinanceForm({...financeForm, books: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Laundry</label><input type="number" className="w-full p-2 border rounded" value={financeForm.laundry} onChange={e => setFinanceForm({...financeForm, laundry: e.target.value})} /></div>
-          <div><label className="text-xs font-bold text-slate-500">Internet</label><input type="number" className="w-full p-2 border rounded" value={financeForm.internet} onChange={e => setFinanceForm({...financeForm, internet: e.target.value})} /></div>
-        </div>
-
-        <div className="bg-slate-900 text-white p-4 rounded-xl text-center mb-6">
-           <p className="text-xs uppercase text-slate-400">Total Upfront (ZMW)</p>
-           <p className="text-xl font-bold mb-2">K{upfront.toLocaleString()}</p>
-           <p className="text-xs uppercase text-slate-400">Est. Monthly Living (USD)</p>
-           <p className="text-xl font-bold">${monthlyLiving.toFixed(2)}</p>
-        </div>
-        <button onClick={() => completeActivity('financial_estimator', 5)} className="w-full bg-yellow-500 text-white py-3 rounded-xl font-bold">Save Estimate</button>
-      </div>
-    );
-  };
-
-  const renderStatus = () => (
-    <div className="p-6 space-y-6">
-      {[
-        { label: "Registration Completed", status: "done" },
-        { label: "Application Submitted", status: "done" },
-        { label: "Waiting Room Active", status: "active" },
-        { label: "Offer Letter Locked", status: "locked" },
-        { label: "Pre-Departure", status: "pending" }
-      ].map((step, i) => (
-        <div key={i} className="flex items-center">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
-            step.status === 'done' ? 'bg-green-100 text-green-600' : 
-            step.status === 'active' ? 'bg-orange-100 text-orange-600 animate-pulse' :
-            step.status === 'locked' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400'
-          }`}>
-            {step.status === 'done' ? <CheckCircle className="w-5 h-5"/> :
-             step.status === 'active' ? <Clock className="w-5 h-5"/> :
-             step.status === 'locked' ? <Lock className="w-4 h-4"/> : <Circle className="w-4 h-4"/>}
-          </div>
-          <div>
-            <p className={`font-bold ${step.status === 'pending' ? 'text-slate-400' : 'text-slate-900'}`}>{step.label}</p>
-            {step.status === 'active' && <p className="text-xs text-orange-500 font-bold">Current Stage</p>}
-          </div>
-        </div>
-      ))}
-      <button onClick={closeModal} className="w-full bg-slate-100 text-slate-700 py-3 rounded-xl font-bold mt-4">Close Status</button>
-    </div>
-  );
-
-  const renderVideo = () => (
-    <div className="p-6 text-center">
-      <div className="bg-red-50 p-6 rounded-2xl mb-6 border border-red-100">
-        <Video className="w-12 h-12 text-red-500 mx-auto mb-4"/>
-        <h3 className="text-lg font-bold text-slate-900 mb-2">Introduce Yourself</h3>
-        <p className="text-sm text-slate-600 mb-4">Record a 2-5 minute video on your phone explaining your academic goals, why you want to study in India, and how you will represent Zambia.</p>
-        <ul className="text-xs text-left text-slate-500 space-y-2 mb-6 bg-white p-4 rounded-xl">
-          <li className="flex items-center"><CheckCircle className="w-3 h-3 mr-2 text-green-500"/> Max size: 100MB</li>
-          <li className="flex items-center"><CheckCircle className="w-3 h-3 mr-2 text-green-500"/> Formats: MP4, MOV, AVI</li>
-          <li className="flex items-center"><CheckCircle className="w-3 h-3 mr-2 text-green-500"/> Good lighting & clear audio</li>
-        </ul>
-        <div className="flex flex-col gap-3">
-          <button className="w-full bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center">
-            <Camera className="w-5 h-5 mr-2"/> Record Camera
-          </button>
-          <button className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-bold flex items-center justify-center">
-            <Upload className="w-5 h-5 mr-2"/> Upload File
-          </button>
-        </div>
-      </div>
-      <button onClick={() => completeActivity('video_intro', 15)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold">Submit Video</button>
-    </div>
-  );
-
-  const renderPhoto = () => (
-    <div className="p-6">
-      <div className="text-center mb-6">
-        <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Wand2 className="w-10 h-10 text-indigo-600" />
-        </div>
-        <h3 className="text-lg font-bold">Creative Photo Challenge</h3>
-        <p className="text-sm text-slate-500">Most creative submission wins a free air ticket!</p>
-      </div>
-
-      <div className="space-y-6">
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <label className="block text-xs font-bold text-slate-500 uppercase mb-2">AI Prompt Generator</label>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="e.g. Zambian student graduating in India..."
-              className="flex-1 p-3 border border-slate-200 rounded-lg text-sm"
-            />
+  return (
+    <>
+      {!hasSeenSubmissionMessage ? (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+          <div className="bg-white max-w-2xl w-full rounded-3xl shadow-2xl p-8 md:p-12 text-center border-4 border-emerald-500">
+            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <CheckCircle className="w-12 h-12 text-emerald-600" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6">
+              Your application has been submitted to our Top 100 Universities list.
+            </h2>
+            <p className="text-lg text-slate-600 mb-10 font-bold whitespace-pre-line">
+              5 universities have responded so far. View their offers in the Waiting Room.
+            </p>
             <button 
-              onClick={() => {
-                setGeneratedImage("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070"); // Simulated AI generation
-              }}
-              className="bg-indigo-600 text-white p-3 rounded-lg"
+              onClick={() => setHasSeenSubmissionMessage(true)} 
+              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 transition shadow-lg"
             >
-              <Wand2 className="w-5 h-5"/>
+              Enter Waiting Room
             </button>
           </div>
-          {generatedImage && (
-            <div className="mt-4 relative rounded-lg overflow-hidden group">
-              <img src={generatedImage} alt="Generated" className="w-full h-48 object-cover"/>
-              <div className="absolute bottom-0 left-0 w-full bg-black/50 text-white text-xs p-2 text-center">
-                www.zambiansinindia.com
+        </div>
+      ) : (
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden pb-20">
+          {showConfetti && <Confetti />}
+
+      {/* BLOCK 2 — APPLICATION STATUS (MOVED TO TOP) */}
+      <section className="max-w-6xl mx-auto px-6 pt-12 pb-6">
+        <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200 overflow-hidden">
+          <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
+            <Activity className="w-5 h-5 text-red-600" /> Application Journey
+          </h2>
+          <div className="flex overflow-x-auto pb-4 gap-8 scrollbar-hide snap-x">
+            {APPLICATION_STAGES.map((stage, i) => (
+              <motion.div 
+                key={stage.id} 
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveModal(`stage_${stage.id}`)}
+                className="flex-shrink-0 w-48 snap-center cursor-pointer group"
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-lg transition-all duration-500 ${i < 3 ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                  <stage.icon className="w-8 h-8" />
+                </div>
+                <h3 className={`font-bold text-sm mb-1 ${i < 3 ? 'text-slate-900' : 'text-slate-400'}`}>{stage.title}</h3>
+                <p className="text-[10px] text-slate-500 leading-tight line-clamp-2">{stage.desc}</p>
+                {i === 2 && (
+                  <div className="mt-2 bg-orange-100 text-orange-600 text-[8px] font-bold px-2 py-0.5 rounded-full inline-block animate-pulse">
+                    CURRENT STAGE
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ACTION REQUIRED PANEL */}
+      <section className="max-w-4xl mx-auto px-6 py-4">
+        <div className="flex justify-center mb-4">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setState(prev => ({ ...prev, isActionRequiredExpanded: !prev.isActionRequiredExpanded }))}
+            className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white z-20 relative"
+          >
+            {state.isActionRequiredExpanded ? <ChevronUp className="w-6 h-6" /> : <Zap className="w-6 h-6 animate-pulse" />}
+            {!state.isActionRequiredExpanded && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+              </span>
+            )}
+          </motion.button>
+        </div>
+
+        <AnimatePresence>
+          {state.isActionRequiredExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -20 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -20 }}
+              className="bg-white rounded-3xl p-8 shadow-2xl border-2 border-orange-500 overflow-hidden"
+            >
+              <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-3">
+                <AlertTriangle className="w-6 h-6 text-orange-500" /> Action Required
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                  <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white mr-4">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">Upload Passport Copy</p>
+                    <p className="text-xs text-slate-500">Required for visa processing.</p>
+                  </div>
+                  <button className="bg-orange-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Upload</button>
+                </div>
+                <div className="flex items-center p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white mr-4">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">Pay Registration Fee</p>
+                    <p className="text-xs text-slate-500">Secure your application slot.</p>
+                  </div>
+                  <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold">Pay Now</button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {/* HERO SECTION */}
+      <section className="relative bg-slate-900 text-white pt-12 pb-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        </div>
+        <div className="max-w-4xl mx-auto relative z-10 text-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-block px-4 py-1 rounded-full bg-red-600 text-[10px] font-bold tracking-widest uppercase mb-4"
+          >
+            Mission: Study in India
+          </motion.div>
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">WAITING ROOM</h1>
+          <p className="text-slate-400 text-sm md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+            Universities are currently reviewing your application. 
+            Complete the tasks below to unlock scholarship opportunities and increase your chances of studying in India.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+            {/* Tasks Metric */}
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="flex justify-between items-end mb-2">
+                <span className="text-xs font-bold text-slate-400 uppercase">Tasks Completed</span>
+                <span className="text-2xl font-black text-emerald-400">{tasksCompleted} / {totalTasks}</span>
+              </div>
+              <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(tasksCompleted / totalTasks) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-300"
+                />
               </div>
             </div>
-          )}
-        </div>
 
-        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition cursor-pointer">
-          <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2"/>
-          <p className="text-sm font-bold text-slate-600">Upload Your Photo</p>
-          <p className="text-xs text-slate-400">JPG/PNG, Max 5MB</p>
+            {/* Countdown Timer */}
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <span className="text-xs font-bold text-slate-400 uppercase block mb-2">Application Review Window</span>
+              <div className="flex justify-center gap-4 font-mono text-3xl font-black text-orange-400">
+                <div className="flex flex-col">
+                  <span>{String(timeLeft.h).padStart(2, '0')}</span>
+                  <span className="text-[10px] text-slate-500 uppercase">Hrs</span>
+                </div>
+                <span>:</span>
+                <div className="flex flex-col">
+                  <span>{String(timeLeft.m).padStart(2, '0')}</span>
+                  <span className="text-[10px] text-slate-500 uppercase">Min</span>
+                </div>
+                <span>:</span>
+                <div className="flex flex-col">
+                  <span>{String(timeLeft.s).padStart(2, '0')}</span>
+                  <span className="text-[10px] text-slate-500 uppercase">Sec</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PROMPT 1 */}
+      <div className="max-w-7xl mx-auto px-6 -mt-8 relative z-20">
+        <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-center gap-3 animate-pulse">
+          <Sparkles className="w-5 h-5" />
+          <span className="text-sm font-black uppercase tracking-wider">Full list of all the scholarships you are eligible for below</span>
         </div>
       </div>
 
-      <button onClick={() => completeActivity('profile_pic', 5)} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold mt-6">Submit Entry</button>
-    </div>
-  );
-
-  const renderEssay = () => (
-    <div className="p-4 space-y-4">
-       <textarea 
-          className="w-full p-3 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-pink-500 outline-none" 
-          placeholder="Tell us about yourself..."
-          value={essayForm.about}
-          onChange={e => setEssayForm({...essayForm, about: e.target.value})}
-       ></textarea>
-       <textarea 
-          className="w-full p-3 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-pink-500 outline-none" 
-          placeholder="Why do you deserve a scholarship?"
-          value={essayForm.scholarship}
-          onChange={e => setEssayForm({...essayForm, scholarship: e.target.value})}
-       ></textarea>
-       <button 
-          onClick={() => completeActivity('personal_essay', 15)}
-          disabled={!essayForm.about || !essayForm.scholarship}
-          className="w-full bg-pink-600 text-white py-3 rounded-xl font-bold disabled:opacity-50"
-       >
-          Submit Essay
-       </button>
-    </div>
-  );
-
-  const renderContent = () => {
-    switch(activeModal) {
-      case 'status_tracker': return renderStatus();
-      case 'about_india_quiz': return renderQuiz();
-      case 'financial_estimator': return renderFinancial();
-      case 'personal_essay': return renderEssay();
-      case 'video_intro': return renderVideo();
-      case 'profile_pic': return renderPhoto();
-      case 'faq_section': return (
-        <div className="p-4 h-[60vh] overflow-y-auto">
-          {FAQ_ITEMS.map((faq, i) => (
-             <div key={i} className="mb-2 border border-slate-100 rounded-xl overflow-hidden">
-                <button onClick={() => setActiveFAQIndex(activeFAQIndex === i ? null : i)} className="w-full flex justify-between items-center p-3 text-left font-bold text-sm bg-slate-50 hover:bg-slate-100">
-                   {faq.q}
-                   {activeFAQIndex === i ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
-                </button>
-                {activeFAQIndex === i && <div className="p-3 text-sm text-slate-600 bg-white">{faq.a}</div>}
-             </div>
-          ))}
-          <button onClick={() => completeActivity('faq_section', 150)} className="w-full mt-4 bg-purple-600 text-white py-3 rounded-xl font-bold">I've Read The FAQs</button>
+      {/* MAIN GRID LAYOUT */}
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Congratulations Header */}
+        <div className="mb-12 text-center">
+          <motion.h2 
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight mb-3"
+          >
+            Congratulations on your 1st Offer
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="text-lg md:text-xl text-slate-500 font-bold"
+          >
+            3 universities have responded so far!
+          </motion.p>
         </div>
-      );
-      case 'share_platform': return (
-         <div className="p-8 text-center">
-            <Share2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Invite 3 Friends</h3>
-            <p className="text-slate-600 mb-6">Increase your scholarship chances by building your community.</p>
-            <div className="flex justify-center gap-4 mb-8">
-               <button className="bg-[#25D366] text-white p-3 rounded-full"><MessageSquare className="w-6 h-6"/></button>
-               <button className="bg-[#1877F2] text-white p-3 rounded-full"><Facebook className="w-6 h-6"/></button>
-               <button className="bg-slate-800 text-white p-3 rounded-full"><Copy className="w-6 h-6"/></button>
-            </div>
-            <button onClick={() => completeActivity('share_platform', 190)} className="w-full bg-green-600 text-white py-3 rounded-xl font-bold">Verify Shares</button>
-         </div>
-      );
-      default: return <div className="p-8 text-center text-slate-500">Activity content loading...</div>;
-    }
-  };
 
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* HEADER */}
-      <div className="bg-slate-900 text-white p-6 md:p-10 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-        <div className="max-w-5xl mx-auto relative z-10">
-           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-              <div>
-                 <h1 className="text-3xl font-bold mb-2">Waiting Room</h1>
-                 <p className="text-slate-400">Complete tasks while universities review your application.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          {/* BLOCK 1 — OFFER 1 */}
+          <div className="lg:col-span-1">
+            <OfferCard 
+              university="CT University" 
+              scholarship="30%" 
+              requirement="Application Submitted"
+              isUnlocked={true}
+              isOpened={state.isOffer1Opened}
+              image="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1200&auto=format&fit=crop"
+              rating={5}
+              showRibbon={true}
+              ribbonText="No1 Trusted Partner"
+              buttonText="Click me to unlock"
+              onClick={() => {
+                if (!state.isOffer1Opened) {
+                  setState(prev => ({ ...prev, isOffer1Opened: true }));
+                  setShowConfetti(true);
+                  setTimeout(() => setShowConfetti(false), 5000);
+                }
+                setSelectedUni({ name: 'CT University', scholarship: '30%', website: 'https://ctuniversity.in' });
+                setIsUniversityPopupOpen(true);
+              }} 
+            />
+          </div>
+
+          {/* PROMPT 2 */}
+          <div className="flex items-center justify-center p-8 bg-white rounded-[2.5rem] border border-slate-200 shadow-sm text-center">
+            <p className="text-slate-500 text-sm font-bold italic">
+              “Universities are still reviewing your application. Don't only read one offer and give up”
+            </p>
+          </div>
+
+          {/* BLOCK 3 — OFFER 2 */}
+          <div id="offer-2">
+            <OfferCard 
+              university="Aditya University" 
+              scholarship="50%" 
+              requirement="Share to Unlock"
+              isUnlocked={state.isOffer2Unlocked}
+              isOpened={false}
+              image="https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?q=80&w=1200&auto=format&fit=crop"
+              rating={4}
+              showRibbon={true}
+              ribbonText="Parents Top Choice"
+              ribbonColor="bg-amber-400 text-slate-900"
+              buttonText="Click here to see offer"
+              lockedButtonText="Click me to unlock"
+              lockedButtonClass="bg-red-600 text-white shadow-[0_4px_0_rgb(185,28,28)] hover:bg-red-700 hover:shadow-[0_2px_0_rgb(185,28,28)] hover:translate-y-[2px] transition-all"
+              onLockedClick={() => setShowOffer2ShareModal(true)}
+              onClick={() => {
+                setSelectedUni({ name: 'Aditya University', scholarship: '50%', website: 'https://aditya.ac.in' });
+                setIsUniversityPopupOpen(true);
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 3000);
+              }} 
+            />
+          </div>
+
+          {/* BLOCK 4 — WHATSAPP COMMUNITY */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <div className="bg-slate-900 rounded-[3rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden border border-[#25D366]/20">
+              {/* Futuristic Network Background */}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#075E54]/40 to-slate-900"></div>
+                
+                {/* Abstract Zambia Map / Network Nodes */}
+                <svg className="absolute w-full h-full opacity-40" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#25D366" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#128C7E" stopOpacity="0.1" />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  
+                  {/* Connection Lines */}
+                  <g stroke="url(#lineGrad)" strokeWidth="2" fill="none" filter="url(#glow)">
+                    <motion.path 
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 4, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                      d="M200,150 L350,100 L500,80 L600,150 L550,250 L450,200 L400,280 L350,320 L250,250 Z" 
+                    />
+                    <motion.path 
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: 1 }}
+                      d="M350,100 L450,200 M600,150 L450,200 M250,250 L400,280 M550,250 L400,280" 
+                    />
+                  </g>
+
+                  {/* Location Dots */}
+                  {[
+                    { cx: 200, cy: 150 }, { cx: 350, cy: 100 }, { cx: 500, cy: 80 },
+                    { cx: 600, cy: 150 }, { cx: 550, cy: 250 }, { cx: 450, cy: 200 },
+                    { cx: 400, cy: 280 }, { cx: 350, cy: 320 }, { cx: 250, cy: 250 }
+                  ].map((dot, i) => (
+                    <motion.circle 
+                      key={i}
+                      cx={dot.cx} cy={dot.cy} r="5" 
+                      fill="#25D366"
+                      filter="url(#glow)"
+                      animate={{ 
+                        r: [4, 8, 4],
+                        opacity: [0.4, 1, 0.4]
+                      }}
+                      transition={{
+                        duration: 2 + Math.random() * 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: Math.random() * 2
+                      }}
+                    />
+                  ))}
+                </svg>
+                
+                {/* Overlay Image of African Students */}
+                <img 
+                  src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1200&auto=format&fit=crop" 
+                  alt="African Students Connected" 
+                  className="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1200&auto=format&fit=crop'; e.currentTarget.onerror = null; }}
+                />
               </div>
               
-              {/* PROGRESS BAR AT TOP */}
-              <div className="w-full md:w-1/2">
-                 <div className="flex justify-between text-xs font-bold text-slate-400 mb-2">
-                    <span>Progress</span>
-                    <span>{state.points} Points</span>
-                 </div>
-                 <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-500 to-amber-500 h-full transition-all duration-1000" style={{ width: `${Math.min((state.points / 500) * 100, 100)}%` }}></div>
-                 </div>
-              </div>
-
-              <div className="flex gap-4">
-                 <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl text-center min-w-[100px]">
-                    <p className="text-xs uppercase text-slate-400 font-bold mb-1">Your Score</p>
-                    <p className="text-3xl font-extrabold text-amber-400">{state.points}</p>
-                 </div>
-                 <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl text-center min-w-[120px]">
-                    <p className="text-xs uppercase text-slate-400 font-bold mb-1">Estimated Wait</p>
-                    <div className="flex justify-center items-center font-mono text-xl font-bold">
-                       <span>{String(timeLeft.h).padStart(2,'0')}</span>:
-                       <span>{String(timeLeft.m).padStart(2,'0')}</span>:
-                       <span>{String(timeLeft.s).padStart(2,'0')}</span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
-      </div>
-
-      {/* MONETIZATION CARDS */}
-      <div className="max-w-5xl mx-auto px-4 -mt-8 relative z-20 mb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 1. Application Processing & Advisory Support */}
-          <div className="bg-white p-6 rounded-2xl shadow-xl border-2 border-amber-400 relative overflow-hidden">
-            {state.isPriority && (
-              <div className="absolute top-0 right-0 bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-bl-xl">
-                ACTIVATED
-              </div>
-            )}
-            <div className="flex items-start mb-4">
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                <Star className="w-6 h-6 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Priority Application & Advisory</h3>
-                <p className="text-xs text-slate-500 mt-1">Submit to ALL 100 Partner Universities + Professional Support</p>
-              </div>
-            </div>
-            <ul className="space-y-2 mb-6 text-sm text-slate-600">
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-green-500"/> Full Application Review</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-green-500"/> Scholarship Positioning Techniques</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-green-500"/> Parent Advisory Pack</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-green-500"/> Priority Support Queue</li>
-            </ul>
-            {state.isPriority ? (
-              <button disabled className="w-full bg-green-100 text-green-700 py-3 rounded-xl font-bold flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 mr-2"/> Priority Status Active
-              </button>
-            ) : (
-              <button 
-                onClick={() => openPayment('Priority Application Upgrade', 150, 'priority_upgrade')}
-                className="w-full bg-amber-500 text-white py-3 rounded-xl font-bold hover:bg-amber-600 shadow-lg transition transform hover:-translate-y-1"
-              >
-                Upgrade Now – K150
-              </button>
-            )}
-          </div>
-
-          {/* 3. Premium Fast Track */}
-          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-700 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
-              FAST TRACK
-            </div>
-            <div className="flex items-start mb-4">
-              <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-                <Zap className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Premium Fast Track</h3>
-                <p className="text-xs text-slate-400 mt-1">1-on-1 Dedicated Advisor & Visa Pre-Check</p>
-              </div>
-            </div>
-            <ul className="space-y-2 mb-6 text-sm text-slate-300">
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-red-500"/> 1-on-1 Advisor Session</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-red-500"/> Essay Review & Optimization</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-red-500"/> Visa Pre-Check Service</li>
-              <li className="flex items-center"><CheckCircle className="w-4 h-4 mr-2 text-red-500"/> Pre-Departure Consultation</li>
-            </ul>
-            {state.hasPaidFastTrack ? (
-              <button disabled className="w-full bg-slate-800 text-slate-400 py-3 rounded-xl font-bold flex items-center justify-center border border-slate-700">
-                <CheckCircle className="w-5 h-5 mr-2"/> Fast Track Active
-              </button>
-            ) : (
-              <button 
-                onClick={() => openPayment('Premium Fast Track', 750, 'fast_track')}
-                className="w-full bg-white text-slate-900 py-3 rounded-xl font-bold hover:bg-slate-100 shadow-lg transition transform hover:-translate-y-1"
-              >
-                Get Fast Track – K750
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ACTIVITIES GRID */}
-      <div className="max-w-5xl mx-auto px-4 relative z-20">
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ALL_ACTIVITIES.map((activity) => {
-               const isCompleted = state.activities[activity.id]?.status === 'completed';
-               return (
-                 <div 
-                   key={activity.id}
-                   onClick={() => !isCompleted && (() => { setActiveModal(activity.id); setModalTitle(activity.title); })()}
-                   className={`bg-white p-6 rounded-2xl shadow-sm border-2 transition cursor-pointer relative overflow-hidden group ${isCompleted ? 'border-emerald-500 opacity-80' : 'border-white hover:border-slate-200 hover:shadow-xl'}`}
-                 >
-                    {isCompleted && (
-                       <div className="absolute inset-0 bg-emerald-50/80 flex items-center justify-center z-10 backdrop-blur-[1px]">
-                          <div className="bg-white px-4 py-2 rounded-full shadow-lg flex items-center text-emerald-600 font-bold text-sm">
-                             <CheckCircle className="w-4 h-4 mr-2"/> Completed
-                          </div>
-                       </div>
-                    )}
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${activity.bg} ${activity.color} shadow-sm`}>
-                       <activity.icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="font-bold text-slate-800 mb-1">{activity.title}</h3>
-                    <p className="text-xs text-slate-500 mb-3">{activity.desc}</p>
+              <div className="relative z-10">
+                <div className="flex flex-col md:flex-row items-center gap-6 mb-10 text-center md:text-left">
+                  <motion.div 
+                    animate={{ y: [-5, 5, -5] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className="w-24 h-24 bg-gradient-to-b from-[#4FCE5D] to-[#128C7E] rounded-3xl flex items-center justify-center shadow-[0_10px_30px_rgba(37,211,102,0.4),inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-4px_0_rgba(0,0,0,0.2)] border border-white/10"
+                  >
+                    <MessageCircle className="w-12 h-12 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]" />
+                  </motion.div>
+                  <div>
+                    <h2 className="text-3xl md:text-4xl font-black mb-2 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-[#25D366]">
+                      Join the WhatsApp Waiting Room Community
+                    </h2>
+                    <p className="text-slate-300 font-medium text-lg">Thousands of Zambian students connected across the country.</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {WHATSAPP_GROUPS.map((group, i) => {
+                    const id = i + 1;
+                    const isLocked = id > 3 && (state.groupClicks[1] < 1000 || state.groupClicks[2] < 1000 || state.groupClicks[3] < 1000);
+                    const isAlmostFull = id === 1;
                     
-                    <div className="flex justify-between items-center mt-4 border-t border-slate-100 pt-3">
-                       <span className={`text-xs font-bold px-2 py-1 rounded-md bg-slate-100 text-slate-600`}>+{activity.points} Points</span>
-                       <div className="flex items-center">
-                          <span className={`text-xs font-bold uppercase mr-2 ${isCompleted ? 'text-green-500' : 'text-slate-300'}`}>
-                             {isCompleted ? 'Complete' : 'Incomplete'}
-                          </span>
-                          {isCompleted ? <CheckCircle className="w-4 h-4 text-green-500"/> : <Circle className="w-4 h-4 text-slate-300"/>}
-                       </div>
-                    </div>
-                 </div>
-               );
-            })}
-         </div>
+                    return (
+                      <motion.button 
+                        key={i} 
+                        disabled={isLocked}
+                        onClick={() => handleGroupClick(id, group.url)}
+                        whileHover={!isLocked ? { scale: 1.02, y: -5 } : {}}
+                        whileTap={!isLocked ? { scale: 0.98 } : {}}
+                        className={`relative p-6 rounded-3xl flex items-center justify-between transition-all duration-300 group overflow-hidden ${isLocked ? 'bg-slate-800/50 cursor-not-allowed border border-slate-700' : 'bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_8px_32px_rgba(37,211,102,0.2)]'}`}
+                      >
+                        {/* Glass reflection */}
+                        {!isLocked && (
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        )}
 
-         {/* Offer Letter Unlock */}
-         <div className="mt-12 bg-white p-8 rounded-3xl shadow-xl border border-slate-200 text-center max-w-md mx-auto">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-               <Lock className="w-8 h-8 text-red-600" />
+                        {isAlmostFull && !isLocked && (
+                          <div className="absolute top-3 right-4 bg-amber-500 text-slate-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg flex items-center gap-1 z-10">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse"></span>
+                            Almost Full
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-4 relative z-10">
+                          <motion.div 
+                            animate={!isLocked ? { y: [-2, 2, -2] } : {}}
+                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+                            className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${isLocked ? 'bg-slate-700 shadow-inner' : 'bg-gradient-to-b from-[#4FCE5D] to-[#128C7E] shadow-[0_10px_20px_rgba(37,211,102,0.4),inset_0_2px_0_rgba(255,255,255,0.4),inset_0_-2px_0_rgba(0,0,0,0.2)]'}`}
+                          >
+                            {isLocked ? <Lock className="w-7 h-7 text-slate-400" /> : <MessageCircle className="w-7 h-7 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]" />}
+                          </motion.div>
+                          <div className="text-left">
+                            <span className={`block font-black text-xl ${isLocked ? 'text-slate-400' : 'text-white'}`}>{group.name}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isLocked ? 'text-slate-500' : 'text-[#25D366]'}`}>
+                              {isLocked ? 'Locked' : `${state.groupClicks[id] || 0} Clicks`}
+                            </span>
+                          </div>
+                        </div>
+                        {!isLocked && <ChevronRight className="w-6 h-6 text-white/50 group-hover:text-white group-hover:translate-x-1 transition relative z-10" />}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Offer Letter Locked</h3>
-            <p className="text-slate-500 text-sm mb-6">Complete mandatory tasks or wait for the timer.</p>
-            
-            <div className="bg-slate-50 p-4 rounded-xl mb-6">
-               <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Master Unlock Field</label>
-               <div className="flex gap-2">
-                  <input 
-                    type="password" 
-                    placeholder="Enter Passkey"
-                    value={masterPasskey}
-                    onChange={(e) => { setMasterPasskey(e.target.value); setPasskeyError(false); }}
-                    className={`flex-1 p-3 border rounded-lg text-center font-mono tracking-widest outline-none focus:ring-2 ${passkeyError ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-emerald-500'}`}
+          </div>
+
+          {/* BLOCK 5 — 100% SCHOLARSHIP EXAM */}
+          <div className="md:col-span-2 lg:col-span-2">
+            <div className="bg-gradient-to-br from-slate-900 to-indigo-900 rounded-[2.5rem] p-10 text-center text-white shadow-2xl border-4 border-amber-400 relative overflow-hidden h-full flex flex-col justify-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-400/20 via-transparent to-transparent animate-pulse"></div>
+              <div className="relative z-10">
+                <motion.div 
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ repeat: Infinity, duration: 3 }}
+                  className="mb-6 inline-block"
+                >
+                  <div className="w-24 h-24 bg-amber-400 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(251,191,36,0.5)]">
+                    <Trophy className="w-12 h-12 text-slate-900" />
+                  </div>
+                </motion.div>
+                <h2 className="text-3xl font-black mb-4 tracking-tight uppercase">100% Scholarship Exam</h2>
+                <p className="text-lg text-amber-400 font-bold mb-6 italic">
+                  “Writing the scholarship exam is the ONLY way to unlock the 100% full scholarship offer.”
+                </p>
+                <button 
+                  onClick={() => onNavigate(PublicView.SCHOLARSHIP_EXAM)}
+                  className="bg-amber-400 text-slate-900 px-10 py-4 rounded-2xl font-black text-lg hover:bg-amber-300 transition shadow-[0_8px_0_rgb(180,130,0)] active:translate-y-1 active:shadow-none"
+                >
+                  Take Scholarship Exam
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* BLOCK 6.5 — OFFER 3 (UNLOCKED BY PHOTO CHALLENGE) */}
+          <div>
+            <OfferCard 
+              university="Lovely Professional University" 
+              scholarship="50%" 
+              requirement="Complete Photo Challenge"
+              isUnlocked={state.isOffer3Unlocked}
+              isOpened={false}
+              image="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop"
+              rating={5}
+              showRibbon={true}
+              ribbonText="Students Top Choice"
+              buttonText="Click here to see offer"
+              onClick={() => {
+                if (!state.isOffer3Unlocked) {
+                  setActiveModal('challenge_3');
+                  return;
+                }
+                setSelectedUni({ name: 'Lovely Professional University', scholarship: '50%', website: 'https://lpu.in' });
+                setIsUniversityPopupOpen(true);
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 3000);
+              }} 
+            />
+          </div>
+
+          {/* BLOCK 7 — FAST TRACK APPLICATION */}
+          <div className="md:col-span-2 lg:col-span-1">
+            <div className="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-xl border border-slate-800 relative overflow-hidden h-full flex flex-col">
+              <div className="absolute top-0 right-0 bg-red-600 px-4 py-1 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl">Fast Track</div>
+              <h2 className="text-2xl font-black mb-4">Fast Track Application</h2>
+              <p className="text-slate-400 text-sm mb-8">Get your application reviewed in under 12 hours for only K750.</p>
+              
+              <div className="mt-auto space-y-6">
+                <div className="flex gap-4">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Airtel_logo.svg/1200px-Airtel_logo.svg.png" alt="Airtel" className="h-8 object-contain grayscale opacity-50" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/MTN_Logo.svg/1200px-MTN_Logo.svg.png" alt="MTN" className="h-8 object-contain grayscale opacity-50" />
+                </div>
+                <button 
+                  onClick={() => openPayment('Fast Track Review', 750, 'fast_track')}
+                  className="w-full bg-white text-slate-900 py-4 rounded-xl font-bold hover:bg-slate-100 transition shadow-lg"
+                >
+                  Pay K750 Now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* BLOCK 8 — OFFER 4 (UNLOCKED BY VIDEO CHALLENGE) */}
+          <div>
+            <OfferCard 
+              university="LTSU" 
+              scholarship="75%" 
+              requirement="Complete Video Challenge"
+              isUnlocked={state.isOffer4Unlocked}
+              isOpened={false}
+              image="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=1200&auto=format&fit=crop"
+              rating={4}
+              showRibbon={true}
+              ribbonText="Cheapest"
+              buttonText="Click here to see offer"
+              onClick={() => {
+                if (!state.isOffer4Unlocked) {
+                  setActiveModal('challenge_4');
+                  return;
+                }
+                setSelectedUni({ name: 'LTSU', scholarship: '75%', website: 'https://ltsu.ac.in' });
+                setIsUniversityPopupOpen(true);
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 3000);
+              }} 
+            />
+          </div>
+
+          {/* BLOCK 9 — 100% SCHOLARSHIP AD */}
+          <div>
+            <div className="bg-emerald-600 rounded-[2.5rem] p-8 text-white text-center shadow-xl relative overflow-hidden h-full flex flex-col justify-center">
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+              <div className="relative z-10">
+                <Trophy className="w-12 h-12 mx-auto mb-4 text-amber-400 animate-bounce" />
+                <h2 className="text-2xl font-black mb-4 uppercase">Unlock Your Future</h2>
+                <p className="text-white/80 mb-6 text-sm font-medium">Don't miss out on the 100% scholarship exam. It's your ticket to India!</p>
+                <button onClick={() => {
+                  const el = document.getElementById('scholarship-exam');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }} className="bg-white text-emerald-600 px-8 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-slate-100 transition shadow-lg text-xs">Learn More</button>
+              </div>
+            </div>
+          </div>
+
+          {/* BLOCK 10 — FINAL LOCKED OFFER */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <div className={`bg-slate-900 rounded-[3rem] p-8 md:p-12 text-white shadow-2xl border-4 transition-all duration-500 ${state.isFinalOfferUnlocked ? 'border-emerald-500' : 'border-slate-700'}`}>
+              {!state.isFinalOfferUnlocked ? (
+                <div className="text-center py-8">
+                  <h2 className="text-3xl md:text-4xl font-black mb-6 uppercase tracking-tighter">Final Offer – 100% Scholarship</h2>
+                  <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-8">
+                    <Lock className="w-10 h-10 text-slate-500" />
+                  </div>
+                  <p className="text-slate-400 font-bold mb-8">Please enter the passkey from your exam portal.</p>
+                  <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-4">
+                    <input 
+                      type="text" 
+                      placeholder="Enter Passkey" 
+                      value={state.finalOfferPasskey}
+                      onChange={(e) => setState(prev => ({ ...prev, finalOfferPasskey: e.target.value }))}
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded-2xl px-6 py-4 text-center font-mono text-xl focus:outline-none focus:border-emerald-500"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (state.finalOfferPasskey.toUpperCase() === 'ZII100') {
+                          setState(prev => ({ ...prev, isFinalOfferUnlocked: true }));
+                          setShowConfetti(true);
+                        } else {
+                          alert('Invalid Passkey. Please check your exam portal.');
+                        }
+                      }}
+                      className="bg-emerald-600 text-white px-10 py-4 rounded-2xl font-black text-lg hover:bg-emerald-700 transition shadow-lg"
+                    >
+                      Unlock
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="max-w-md mx-auto">
+                  <OfferCard 
+                    university="IMI" 
+                    scholarship="100%" 
+                    requirement="Scholarship Exam Passed"
+                    isUnlocked={true}
+                    isOpened={false}
+                    image="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=1200&auto=format&fit=crop"
+                    rating={5}
+                    onClick={() => {
+                      setSelectedUni({ name: 'IMI', scholarship: '100%', website: 'https://imi.edu' });
+                      setIsUniversityPopupOpen(true);
+                      setShowConfetti(true);
+                      setTimeout(() => setShowConfetti(false), 3000);
+                    }} 
                   />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ADDITIONAL TASKS SECTION */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { id: "financial_calculator", title: "Financial Calculator", icon: Calculator, color: "text-blue-500", bg: "bg-blue-50" },
+                { id: "parent_pack", title: "Parent Pack", icon: Users, color: "text-purple-500", bg: "bg-purple-50" },
+                { id: "faqs", title: "Most Asked Questions", icon: HelpCircle, color: "text-orange-500", bg: "bg-orange-50" },
+                { id: "india_quiz", title: "About India Quiz", icon: Globe, color: "text-emerald-500", bg: "bg-emerald-50" },
+              ].map((task, i) => (
+                <div 
+                  key={i} 
+                  onClick={() => setActiveModal(task.id)}
+                  className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center hover:shadow-xl transition cursor-pointer group"
+                >
+                  <div className={`w-12 h-12 ${task.bg} ${task.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition`}>
+                    <task.icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-800 leading-tight">{task.title}</h3>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ADDITIONAL INFORMATION SECTION */}
+          <div className="md:col-span-2 lg:col-span-3">
+            <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-xl border border-slate-100">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">Everything You Need to Know</h2>
+                <p className="text-slate-500 max-w-2xl mx-auto">Detailed guidance for your journey from Zambia to India.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div className="space-y-8">
+                  <div className="flex gap-6">
+                    <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Globe className="w-7 h-7 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Studying in India Overview</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed">India is a global education hub with world-class universities and a rich cultural heritage. Thousands of Zambian students have successfully graduated.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Award className="w-7 h-7 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Benefits of Indian Universities</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed">High-quality education, globally recognized degrees, and affordable living costs compared to Western countries.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="flex gap-6">
+                    <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <ShieldCheck className="w-7 h-7 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Safety & Student Support</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed">Our partner universities provide 24/7 security and dedicated international student offices for Zambians.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-6">
+                    <div className="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Plane className="w-7 h-7 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Visa & Travel Guidance</h3>
+                      <p className="text-sm text-slate-500 leading-relaxed">We provide full support for your student visa application and help you book the most affordable flights.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <AnimatePresence>
+        {activeModal?.startsWith('challenge_') && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/95 backdrop-blur-xl p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2.5rem] max-w-2xl w-full p-10 shadow-2xl relative overflow-y-auto max-h-[90vh]"
+            >
+              <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition">
+                <X className="w-6 h-6" />
+              </button>
+              
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-orange-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <Lock className="w-10 h-10 text-orange-600" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 mb-2">Offer Locked</h2>
+                <p className="text-slate-500 font-bold">
+                  {activeModal === 'challenge_3' 
+                    ? "Complete the Photo Challenge to unlock this offer."
+                    : "Complete the Video Challenge to unlock this offer."}
+                </p>
+              </div>
+
+              {activeModal === 'challenge_3' ? (
+                <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+                  <div className="flex flex-col gap-6 items-center">
+                    <div className="w-full">
+                      <div className="aspect-square bg-white rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-6 text-center group cursor-pointer hover:bg-slate-50 transition">
+                        <Camera className="w-12 h-12 text-slate-400 mb-2 group-hover:scale-110 transition" />
+                        <p className="text-sm font-bold text-slate-600">Upload Photo</p>
+                        <p className="text-[10px] text-slate-400">Add ZII Frame</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-xl font-black text-slate-900 mb-2">Future Global Student Challenge</h3>
+                      <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+                        Upload a photo of yourself, add the Zambians In India frame, and share it to unlock a 60% scholarship opportunity from GD Goenka University.
+                      </p>
+                      <button onClick={() => {
+                        handleShare(3);
+                        setActiveModal(null);
+                      }} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <Share2 className="w-4 h-4" /> Share & Unlock Offer 3
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+                  <div className="text-center">
+                    <h3 className="text-xl font-black text-slate-900 mb-2">Video Challenge</h3>
+                    <p className="text-slate-500 text-sm mb-8">Record a short video introducing yourself. Reward: 75% Scholarship from LTSU.</p>
+                    
+                    <div className="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-slate-200 group cursor-pointer hover:bg-slate-100 transition mb-6">
+                      <Video className="w-16 h-16 text-slate-300 mx-auto mb-4 group-hover:text-red-500 transition" />
+                      <p className="font-bold text-slate-600">Click to record or upload video</p>
+                    </div>
+                    <button 
+                      onClick={() => {
+                        setState(prev => ({ ...prev, isOffer4Unlocked: true }));
+                        completeTask('video_challenge');
+                        setActiveModal(null);
+                      }} 
+                      className="w-full bg-red-600 text-white py-4 rounded-xl font-bold shadow-lg"
+                    >
+                      Submit Video Challenge
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FINANCIAL ESTIMATOR POPUP */}
+      <AnimatePresence>
+        {activeModal === 'financial_calculator' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2.5rem] max-w-lg w-full p-8 md:p-12 shadow-2xl relative"
+            >
+              <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition">
+                <X className="w-6 h-6" />
+              </button>
+              <h2 className="text-3xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <Calculator className="w-8 h-8 text-blue-600" /> Financial Estimator
+              </h2>
+              <div className="space-y-4 mb-8">
+                {[
+                  { label: "Indian Student Visa Application", cost: "K1,350" },
+                  { label: "Passport (If applicable)", cost: "K320" },
+                  { label: "Medical Certificates", cost: "K350" },
+                  { label: "Yellow Fever Vaccination", cost: "K800" },
+                  { label: "Documents Verification", cost: "K350" },
+                  { label: "Airticket (Group Flight — Kenya Airways)", cost: "92 seats left", highlight: true },
+                  { label: "Students Farewell Dinner", cost: "K500" },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between items-center text-sm border-b border-slate-100 pb-2">
+                    <span className="text-slate-500 font-medium">{item.label}</span>
+                    <span className={`font-bold ${item.highlight ? 'text-red-600 animate-pulse' : 'text-slate-900'}`}>{item.cost}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-emerald-50 p-6 rounded-2xl border-2 border-emerald-200 text-center">
+                <p className="text-xs font-bold text-emerald-600 uppercase mb-1">Total Estimated Journey Cost</p>
+                <p className="text-4xl font-black text-emerald-700">K4,170</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* STAGE DETAIL POPUP */}
+      <AnimatePresence>
+        {activeModal?.startsWith('stage_') && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2.5rem] max-w-md w-full p-8 text-center shadow-2xl relative"
+            >
+              <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition">
+                <X className="w-6 h-6" />
+              </button>
+              {(() => {
+                const stageId = parseInt(activeModal.split('_')[1]);
+                const stage = APPLICATION_STAGES.find(s => s.id === stageId);
+                if (!stage) return null;
+                return (
+                  <>
+                    <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                      <stage.icon className="w-10 h-10 text-emerald-600" />
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-900 mb-4">{stage.title}</h2>
+                    <p className="text-slate-500 leading-relaxed mb-8">{stage.desc}</p>
+                    <button onClick={() => setActiveModal(null)} className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold">Close Details</button>
+                  </>
+                );
+              })()}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isUniversityPopupOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/95 backdrop-blur-xl p-4 overflow-y-auto"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2rem] md:rounded-[3rem] max-w-4xl w-full shadow-2xl relative overflow-hidden my-8"
+            >
+              <div className="absolute top-0 left-0 w-full h-4 bg-emerald-600"></div>
+              <button 
+                onClick={() => setIsUniversityPopupOpen(false)} 
+                className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition z-50"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="p-6 md:p-12">
+                {/* Scholarship Badge */}
+                <div className="flex justify-center mb-8">
+                  <div className="bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black text-2xl shadow-xl animate-bounce">
+                    {selectedUni.scholarship} Scholarship
+                  </div>
+                </div>
+
+                {/* 1. University Description */}
+                <div className="mb-12">
+                  <h2 className="text-3xl md:text-5xl font-black text-slate-900 mb-4">{selectedUni.name}</h2>
+                  <p className="text-slate-600 text-lg leading-relaxed">
+                    {selectedUni.name} is a premier institution in India, recognized globally for its academic excellence, innovative research, and vibrant campus life. With state-of-the-art facilities and a diverse community of students from over 50 countries, it provides an ideal environment for Zambian students to excel and build global careers.
+                  </p>
+                </div>
+
+                {/* 2. Video Section */}
+                <div className="mb-12">
+                  <h3 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <MonitorPlay className="w-6 h-6 text-red-600" /> University Tour
+                  </h3>
+                  <div className="aspect-video bg-slate-100 rounded-3xl overflow-hidden relative group cursor-pointer">
+                    <img src={`https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1200&auto=format&fit=crop`} alt="Video Placeholder" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition">
+                        <Play className="w-8 h-8 text-white fill-current" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Campus Life Photo Gallery */}
+                <div className="mb-12">
+                  <h3 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <ImageIcon className="w-6 h-6 text-blue-600" /> Campus Life Gallery
+                  </h3>
+                  <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide snap-x">
+                    {[
+                      "https://images.unsplash.com/photo-1541339907198-e08756dedf3f&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1562774053-701939374585&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846&auto=format&fit=crop",
+                      "https://images.unsplash.com/photo-1498243639159-414ccead3c30&auto=format&fit=crop"
+                    ].map((url, i) => (
+                      <div key={i} className="flex-shrink-0 w-64 h-48 rounded-2xl overflow-hidden snap-center shadow-lg">
+                        <img src={`${url}?q=80&w=800&auto=format&fit=crop`} alt={`Gallery ${i}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Audio Voice Note */}
+                <div className="mb-12 bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                  <h3 className="text-xl font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <Mic className="w-6 h-6 text-emerald-600" /> Offer Explanation
+                  </h3>
+                  <div className="flex items-center gap-4">
+                    <button className="bg-emerald-600 text-white p-4 rounded-full shadow-lg hover:bg-emerald-700 transition">
+                      <Play className="w-6 h-6 fill-current" />
+                    </button>
+                    <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="w-1/3 h-full bg-emerald-500"></div>
+                    </div>
+                    <button className="bg-slate-200 text-slate-700 p-3 rounded-xl hover:bg-slate-300 transition">
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. Minimum Amount Needed */}
+                <div className="mb-12 bg-orange-50 p-8 rounded-[2.5rem] border-4 border-orange-200">
+                  <h3 className="text-2xl font-black text-orange-900 mb-6">Minimum Amount Needed To Travel</h3>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-orange-800 uppercase tracking-widest mb-2">Total Estimated Journey Cost</p>
+                    <p className="text-6xl font-black text-orange-600 mb-4">K4,170</p>
+                    <p className="text-slate-600 text-sm italic">“This is the only amount needed to start your journey. No hidden fees.”</p>
+                  </div>
+                </div>
+
+                {/* 6. 5 Key Advantages */}
+                <div className="mb-12">
+                  <h3 className="text-xl font-black text-slate-900 mb-6">5 Key Advantages of Accepting</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      'Globally Recognized Degree',
+                      '100% Placement Assistance',
+                      'Modern International Hostels',
+                      'Vibrant Cultural Diversity',
+                      'Affordable Living Costs'
+                    ].map((adv, i) => (
+                      <div key={i} className="flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <div className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-sm">{i+1}</div>
+                        <span className="font-bold text-slate-800">{adv}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 7. High-Impact Call to Action */}
+                <div className="mb-12 bg-slate-900 text-white p-8 rounded-[2.5rem] text-center">
+                  <h3 className="text-2xl font-black mb-4">Secure Your Future Today</h3>
+                  <div className="space-y-2 mb-8 text-slate-400 font-medium">
+                    <p>• Tuition fees can be paid in instalments</p>
+                    <p>• Payments begin after arrival on campus</p>
+                    <p className="text-emerald-400 font-bold">Confirm your seat early to guarantee your scholarship!</p>
+                  </div>
                   <button 
                     onClick={() => {
-                      if (masterPasskey === '1234567') {
-                        onPhaseComplete(AppPhase.OFFER_LETTER);
-                      } else {
-                        setPasskeyError(true);
-                      }
+                      setIsUniversityPopupOpen(false);
+                      setIsAcceptPromptOpen(true);
                     }}
-                    className="bg-slate-900 text-white px-4 rounded-lg font-bold"
+                    className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black text-xl hover:bg-emerald-700 transition shadow-2xl"
                   >
-                    <Key className="w-4 h-4"/>
+                    I Accept the Offer
                   </button>
-               </div>
-               {passkeyError && <p className="text-xs text-red-500 font-bold mt-2">Invalid Passkey</p>}
-            </div>
+                </div>
 
-            <div className="flex items-center justify-center text-xs text-slate-400">
-               <Clock className="w-3 h-3 mr-1"/> Auto-unlocks in {timeLeft.h}h {timeLeft.m}m
-            </div>
-         </div>
-      </div>
+                {/* 8. Explore More Button */}
+                <div className="mb-12 text-center">
+                  <a 
+                    href={selectedUni.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-slate-500 font-bold hover:text-slate-900 transition underline underline-offset-4"
+                  >
+                    Explore More on Official Website <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
 
-      {/* MODAL */}
-      {activeModal && (
-         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-               <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                  <h3 className="font-bold text-slate-800">{modalTitle}</h3>
-                  <button onClick={closeModal} className="p-2 hover:bg-slate-200 rounded-full"><X className="w-5 h-5"/></button>
-               </div>
-               <div className="overflow-y-auto flex-1">
-                  {renderContent()}
-               </div>
-            </div>
-         </div>
-      )}
+                {/* ACTION BUTTONS (BOTTOM OF POP-UP) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 pt-12 border-t border-slate-100">
+                  <button 
+                    onClick={() => {
+                      setIsUniversityPopupOpen(false);
+                      setIsAcceptPromptOpen(true);
+                    }}
+                    className="bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition"
+                  >
+                    I Accept the Offer
+                  </button>
+                  <button className="bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2">
+                    <Share2 className="w-5 h-5" /> Ask / Forward to Parents
+                  </button>
+                  <button 
+                    onClick={() => setIsUniversityPopupOpen(false)}
+                    className="bg-slate-100 text-slate-600 py-4 rounded-xl font-bold hover:bg-slate-200 transition"
+                  >
+                    I Cannot Afford
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsUniversityPopupOpen(false);
+                      onNavigate(PublicView.SCHOLARSHIP_EXAM);
+                    }}
+                    className="bg-amber-500 text-white py-4 rounded-xl font-bold"
+                  >
+                    Apply for Education Loan
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsUniversityPopupOpen(false);
+                      onNavigate(PublicView.SCHOLARSHIP_EXAM);
+                    }}
+                    className="bg-amber-600 text-white py-4 rounded-xl font-bold"
+                  >
+                    Apply for Bursary
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsUniversityPopupOpen(false);
+                      onNavigate(PublicView.SCHOLARSHIP_EXAM);
+                    }}
+                    className="bg-slate-900 text-white py-4 rounded-xl font-bold text-xs"
+                  >
+                    I Cannot Afford – Explore Funding
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ACCEPT PROMPT */}
+      <AnimatePresence>
+        {isAcceptPromptOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <HelpCircle className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-4">Confirm Acceptance</h2>
+              <p className="text-slate-500 mb-8">
+                Have you fully read the offer and understand the terms and amounts after scholarship? 
+                <br /><br />
+                <span className="font-bold text-slate-900">Note: No fees are to be paid immediately.</span>
+              </p>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    setIsAcceptPromptOpen(false);
+                    onPhaseComplete(AppPhase.OFFER_LETTER);
+                  }}
+                  className="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg"
+                >
+                  Yes, I Understand & Accept
+                </button>
+                <button onClick={() => setIsAcceptPromptOpen(false)} className="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition">
+                  Go Back & Review
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* OFFER 2 SHARE MODAL */}
+      <AnimatePresence>
+        {showOffer2ShareModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative"
+            >
+              <button 
+                onClick={() => setShowOffer2ShareModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Share2 className="w-8 h-8" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-center text-slate-900 mb-4 tracking-tight">Unlock Offer</h3>
+              <p className="text-center text-slate-600 mb-8 font-medium leading-relaxed">
+                Help one friend apply to university by sharing this platform in one group to unlock this offer.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => handleOffer2Share('whatsapp')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition active:scale-95">
+                  <MessageSquare className="w-8 h-8" />
+                  <span className="font-bold text-sm">WhatsApp</span>
+                </button>
+                <button onClick={() => handleOffer2Share('facebook')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20 transition active:scale-95">
+                  <Facebook className="w-8 h-8" />
+                  <span className="font-bold text-sm">Facebook</span>
+                </button>
+                <button onClick={() => handleOffer2Share('linkedin')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-[#0A66C2]/10 text-[#0A66C2] hover:bg-[#0A66C2]/20 transition active:scale-95">
+                  <Linkedin className="w-8 h-8" />
+                  <span className="font-bold text-sm">LinkedIn</span>
+                </button>
+                <button onClick={() => handleOffer2Share('sms')} className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition active:scale-95">
+                  <MessageCircle className="w-8 h-8" />
+                  <span className="font-bold text-sm">SMS</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* PAYMENT MODAL */}
       <PaymentModal 
@@ -816,7 +1474,9 @@ const WaitingRoom: React.FC<WaitingRoomProps> = ({ onPhaseComplete }) => {
         currency="ZMW"
         onSuccess={handlePaymentSuccess}
       />
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

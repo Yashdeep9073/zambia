@@ -6,6 +6,7 @@ import {
   Calendar, MapPin, Globe, Lock
 } from 'lucide-react';
 import { PublicView } from '../types';
+import WhatsAppFunnel from '../components/WhatsAppFunnel';
 
 interface ScholarshipExamPageProps {
   onNavigate: (view: PublicView) => void;
@@ -55,7 +56,7 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* 1. HERO SECTION */}
       <div className="relative bg-slate-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-900"></div>
         
         <div className="max-w-7xl mx-auto px-4 py-20 relative z-10 text-center">
@@ -459,6 +460,14 @@ const ScholarshipExamPage: React.FC<ScholarshipExamPageProps> = ({ onNavigate })
           </button>
           <p className="mt-6 text-sm text-slate-500">Registration closes in {timeLeft.days} days.</p>
         </div>
+      </div>
+
+      {/* WhatsApp Funnel Integration */}
+      <div className="max-w-6xl mx-auto px-4 py-20">
+        <WhatsAppFunnel 
+          title="Scholarship Exam Support"
+          context="Join our exam preparation groups to get study materials, past papers, and technical support."
+        />
       </div>
 
     </div>

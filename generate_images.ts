@@ -79,6 +79,12 @@ async function main() {
     "public/assets/images/landing/zii-advantage.png",
     "16:9"
   );
+
+  await generateImage(
+    "Futuristic 8K background image for a WhatsApp recruitment funnel: Realistic African students from major Zambian towns (Lusaka, Kitwe, Ndola, Livingstone, Kabwe, Chipata) with location icons above them. Glowing digital communication lines connecting the cities. WhatsApp chat bubbles linking them to a global classroom in India. Students are learning online on laptops and phones, communicating via WhatsApp. Realistic African human faces, educational, global, high-tech, vibrant green and blue lighting accents.",
+    "public/assets/images/landing/whatsapp-funnel-bg.png",
+    "16:9"
+  );
 }
 
 main();

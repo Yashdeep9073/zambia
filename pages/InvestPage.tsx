@@ -19,7 +19,7 @@ const InvestPage: React.FC<InvestPageProps> = ({ onNavigate, onLogin }) => {
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* 1. HERO SECTION */}
       <div className="relative bg-slate-900 text-white min-h-[80vh] flex items-center justify-center overflow-hidden pt-20">
-         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070')] bg-cover bg-center"></div>
+         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
          
          <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">

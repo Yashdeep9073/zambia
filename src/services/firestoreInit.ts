@@ -17,6 +17,7 @@ const COLLECTIONS = [
   "universities",
   "university_profiles",
   "university_documents",
+  "university_interests",
   "university_fair_calculations",
   "university_auth_logs",
   "users",

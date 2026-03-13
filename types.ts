@@ -263,6 +263,7 @@ export interface EmailPayload {
   to_email: string;
   subject: string;
   template_id?: string;
+  student_id?: string;
   variables?: Record<string, string>;
   attachments?: {
     file_name: string;

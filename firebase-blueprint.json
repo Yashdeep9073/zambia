@@ -1,0 +1,245 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Core user profile data",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["PROSPECTIVE_STUDENT", "CURRENT_STUDENT", "ALUMNI", "PARENT", "ADMIN_CONSULTANT", "PARTNER_UNIVERSITY"] },
+        "lifecycleStage": { "type": "string" },
+        "currentStage": { "type": "string" },
+        "lastCompletedStep": { "type": "string" },
+        "ziiNumber": { "type": "string" },
+        "emailVerified": { "type": "boolean" },
+        "phoneVerified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "profileCompletionPercentage": { "type": "number" }
+      },
+      "required": ["fullName", "email", "role"]
+    },
+    "Application": {
+      "title": "Student Application",
+      "description": "Full application data for a student",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "university_id": { "type": "string" },
+        "stage": { "type": "string" },
+        "progressPercentage": { "type": "number" },
+        "status": { "type": "string" },
+        "personalSection": { "type": "object" },
+        "guardianSection": { "type": "object" },
+        "academicSection": { "type": "object" },
+        "documentsSection": { "type": "object" },
+        "lastUpdateTimestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "status"]
+    },
+    "University": {
+      "title": "University Profile",
+      "description": "Partner university profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "university_id": { "type": "string" },
+        "universityName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "status": { "type": "string", "enum": ["pending_review", "active", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "university_id", "universityName", "email", "status"]
+    },
+    "Payment": {
+      "title": "Payment Record",
+      "description": "Financial transaction record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "applicationId": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "initiatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "currency", "paymentStatus"]
+    },
+    "Mail": {
+      "title": "Outbound Email",
+      "description": "Trigger document for Firebase Email Extension",
+      "type": "object",
+      "properties": {
+        "to": { "type": "array", "items": { "type": "string" } },
+        "template": { "type": "object" },
+        "message": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
+      },
+      "required": ["to", "createdAt"]
+    },
+    "UniversityLead": {
+      "title": "University Lead",
+      "description": "Prospective student lead uploaded by university",
+      "type": "object",
+      "properties": {
+        "universityId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "course": { "type": "string" },
+        "intake": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "processed", "error"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["universityId", "fullName", "email", "status"]
+    },
+    "CampaignTransaction": {
+      "title": "Campaign Transaction",
+      "description": "Monetization stream purchase record",
+      "type": "object",
+      "properties": {
+        "universityId": { "type": "string" },
+        "streamType": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["universityId", "streamType", "amount", "status"]
+    },
+    "FeaturedUniversity": {
+      "title": "Featured University",
+      "description": "Universities with active featured placements",
+      "type": "object",
+      "properties": {
+        "universityId": { "type": "string" },
+        "placementType": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["universityId", "placementType", "active"]
+    },
+    "AnalyticsNotification": {
+      "title": "Analytics Notification",
+      "description": "Log of sent notifications for dashboard tracking",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["email", "whatsapp", "sms"] },
+        "recipient": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "failed", "read", "opened"] },
+        "trigger": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "recipient", "status", "createdAt"]
+    },
+    "UniversityInterest": {
+      "title": "University Interest",
+      "description": "General interest from prospective university partners",
+      "type": "object",
+      "properties": {
+        "university_name": { "type": "string" },
+        "contact_email": { "type": "string", "format": "email" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["university_name", "contact_email"]
+    },
+    "FairCalculation": {
+      "title": "Fair Calculation",
+      "description": "Calculated marketing costs for university fairs",
+      "type": "object",
+      "properties": {
+        "university_name": { "type": "string" },
+        "contact_email": { "type": "string", "format": "email" },
+        "student_range": { "type": "number" },
+        "calculated_cost": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["university_name", "contact_email", "student_range", "calculated_cost"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/universities/{universityId}": {
+      "schema": "University",
+      "description": "Partner university documents"
+    },
+    "/applications/{appId}": {
+      "schema": "Application",
+      "description": "Student applications"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Payment records"
+    },
+    "/university_leads/{leadId}": {
+      "schema": "UniversityLead",
+      "description": "Leads uploaded by universities"
+    },
+    "/campaign_transactions/{transactionId}": {
+      "schema": "CampaignTransaction",
+      "description": "Monetization stream purchases"
+    },
+    "/featured_universities/{featuredId}": {
+      "schema": "FeaturedUniversity",
+      "description": "Active featured placements"
+    },
+    "/analytics_notifications/{notificationId}": {
+      "schema": "AnalyticsNotification",
+      "description": "Notification delivery logs"
+    },
+    "/mail/{mailId}": {
+      "schema": "Mail",
+      "description": "Trigger collection for email extension"
+    },
+    "/email_analytics/{analyticsId}": {
+      "schema": "object",
+      "description": "Logs for sent emails"
+    },
+    "/notification_logs/{logId}": {
+      "schema": "object",
+      "description": "Logs for all notifications"
+    },
+    "/analytics_events/{eventId}": {
+      "schema": "object",
+      "description": "Application event logs"
+    },
+    "/analytics_sessions/{sessionId}": {
+      "schema": "object",
+      "description": "User session tracking"
+    },
+    "/analytics_aggregates/{aggregateId}": {
+      "schema": "object",
+      "description": "Aggregated metrics for dashboard"
+    },
+    "/device_tracking/{fingerprint}": {
+      "schema": "object",
+      "description": "Device fingerprint tracking"
+    },
+    "/ip_logs/{logId}": {
+      "schema": "object",
+      "description": "IP address logs"
+    },
+    "/notifications_sent/{id}": {
+      "schema": "object",
+      "description": "Audit log for all notification attempts (Email, SMS, WhatsApp)"
+    },
+    "/university_interests/{id}": {
+      "schema": "UniversityInterest",
+      "description": "University partnership inquiries"
+    },
+    "/university_fair_calculations/{id}": {
+      "schema": "FairCalculation",
+      "description": "Saved fair marketing calculations"
+    }
+  }
+}

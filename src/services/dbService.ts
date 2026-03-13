@@ -19,6 +19,9 @@ import { UserRole, AppPhase } from "../../types";
 import { trackSessionStart, trackSessionEnd, logIp } from "./trackingService";
 import { saveDraft, snapshotApplication } from "./persistenceService";
 import { DbApplication, DbScholarshipExam, DbExamAttempt, DbPayment, DbWaitingRoom } from "../types/db";
+import { integrationService } from "../../services/integrationService";
+import { handleFirestoreError, OperationType } from "../utils/firestoreUtils";
+import { logAnalyticsEvent, AnalyticsEventType } from "./analyticsService";
 
 // --- DATABASE SERVICE ---
 
@@ -66,6 +69,7 @@ export const createApplication = async (userId: string, initialData: any) => {
       stage: AppPhase.APPLICATION_ENTRY.toString(),
       progressPercentage: 0,
       status: "Draft",
+      lifecycle_status: "draft",
       personalSection: initialData,
       guardianSection: {},
       academicSection: {},
@@ -82,6 +86,35 @@ export const createApplication = async (userId: string, initialData: any) => {
 
     await setDoc(appRef, applicationData);
     
+    // Log Analytics
+    await logAnalyticsEvent(userId, AnalyticsEventType.REGISTRATION_COMPLETED, { appId });
+
+    // Trigger Email Notification
+    const userDoc = await getDoc(doc(db, "users", userId));
+    if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.email) {
+            await integrationService.sendEmail({
+                to_email: userData.email,
+                subject: "Application Started - Zambians In India",
+                template_id: "application_started",
+                student_id: userId,
+                variables: {
+                    name: userData.displayName || "Student",
+                    appId: appId,
+                    source: "application_create"
+                }
+            });
+        }
+        if (userData.phone) {
+            await integrationService.sendSMS({
+                to_phone_e164: userData.phone,
+                message_body: `Hi ${userData.displayName || 'Student'}, you have successfully started your application on Zambians In India. Your App ID is ${appId}.`,
+                student_id: userId
+            });
+        }
+    }
+
     // Track creation
     await logIp(userId, "unknown"); // Placeholder for IP logging
 
@@ -127,8 +160,40 @@ export const submitApplication = async (appId: string, userId: string) => {
             lockedReason: "Submitted for Review"
         });
 
-        // Trigger Notification (Placeholder)
-        // await sendNotification(userId, "Application Submitted Successfully");
+        // Log Analytics
+        await logAnalyticsEvent(userId, AnalyticsEventType.FORM_SUBMITTED, { appId });
+
+        // Trigger Email Notification
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.email) {
+                await integrationService.sendEmail({
+                    to_email: userData.email,
+                    subject: "Application Submitted Successfully",
+                    template_id: "application_submitted",
+                    student_id: userId,
+                    variables: {
+                        name: userData.displayName || "Student",
+                        appId: appId
+                    }
+                });
+            }
+            if (userData.phone) {
+                await integrationService.sendSMS({
+                    to_phone_e164: userData.phone,
+                    message_body: `Congratulations ${userData.displayName || 'Student'}! Your application ${appId} has been submitted successfully.`,
+                    student_id: userId
+                });
+                await integrationService.sendWhatsApp({
+                    to_whatsapp: userData.phone,
+                    conversation_type: 'notification',
+                    student_id: userId,
+                    template_name: 'application_submitted_wa',
+                    template_variables: { name: userData.displayName || 'Student', appId }
+                });
+            }
+        }
 
     } catch (error) {
         console.error("Error submitting application:", error);
@@ -173,6 +238,23 @@ export const initWaitingRoom = async (userId: string) => {
         ...waitingRoomData,
         createdAt: serverTimestamp()
       });
+
+      // Log Analytics
+      await logAnalyticsEvent(userId, AnalyticsEventType.WAITING_ROOM_ENTERED);
+
+      // Trigger Email Notification
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists() && userDoc.data().email) {
+          await integrationService.sendEmail({
+              to_email: userDoc.data().email,
+              subject: "Welcome to the Waiting Room - ZII",
+              template_id: "waiting_room_entry",
+              variables: {
+                  name: userDoc.data().displayName || "Student",
+                  source: "waiting_room_init"
+              }
+          });
+      }
     }
   } catch (error) {
     console.error("Error initializing waiting room:", error);
@@ -216,9 +298,25 @@ export const recordExamAttempt = async (userId: string, examId: string, score: n
             
             transaction.set(attemptRef, attemptData);
 
-            // Update User Stats
-            // transaction.update(userExamRef, { ... });
+            // Trigger Email Notification (Attempt Recorded)
+            // Note: This is inside a transaction, but sendEmail is async and external.
+            // We should ideally trigger it after transaction success.
         });
+
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists() && userDoc.data().email) {
+            await integrationService.sendEmail({
+                to_email: userDoc.data().email,
+                subject: "Exam Attempt Recorded",
+                template_id: "exam_attempt_recorded",
+                variables: {
+                    name: userDoc.data().displayName || "Student",
+                    score: score.toString(),
+                    examId: examId,
+                    source: "exam_record"
+                }
+            });
+        }
     } catch (error) {
         console.error("Error recording exam attempt:", error);
         throw error;
@@ -242,6 +340,35 @@ export const initiatePayment = async (userId: string, amount: number, serviceTyp
             retryCount: 0
         };
         await setDoc(paymentRef, paymentData);
+
+        // Trigger Email Notification
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.email) {
+                await integrationService.sendEmail({
+                    to_email: userData.email,
+                    subject: "Payment Initiated - ZII",
+                    template_id: "payment_initiated",
+                    student_id: userId,
+                    variables: {
+                        name: userData.displayName || "Student",
+                        amount: amount.toString(),
+                        service: serviceType,
+                        transactionId: paymentRef.id,
+                        source: "payment_init"
+                    }
+                });
+            }
+            if (userData.phone) {
+                await integrationService.sendSMS({
+                    to_phone_e164: userData.phone,
+                    message_body: `ZII: Payment of ${amount} ZMW for ${serviceType} initiated. Ref: ${paymentRef.id}.`,
+                    student_id: userId
+                });
+            }
+        }
+
         return paymentRef.id;
     } catch (error) {
         console.error("Error initiating payment:", error);

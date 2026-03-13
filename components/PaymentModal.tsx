@@ -96,7 +96,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Order Summary</h4>
         <div className="flex justify-between items-center mb-1">
           <span className="font-bold text-slate-800">{serviceName}</span>
-          <span className="font-bold text-slate-900">{currency} {amount.toLocaleString()}</span>
+          <span className="font-bold text-slate-900">{currency} {amount?.toLocaleString() || '0'}</span>
         </div>
         <div className="flex justify-between items-center text-xs text-slate-500">
           <span>Processing Fee</span>
@@ -104,7 +104,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
         <div className="border-t border-slate-200 my-2 pt-2 flex justify-between items-center font-extrabold text-lg text-slate-900">
           <span>Total</span>
-          <span>{currency} {amount.toLocaleString()}</span>
+          <span>{currency} {amount?.toLocaleString() || '0'}</span>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           </>
         ) : (
           <>
-            Pay {currency} {amount.toLocaleString()}
+            Pay {currency} {amount?.toLocaleString() || '0'}
           </>
         )}
       </button>
@@ -210,7 +210,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
         <div className="mb-2 flex justify-between">
           <span className="text-xs text-slate-500">Amount</span>
-          <span className="text-xs font-bold text-slate-900">{currency} {amount.toLocaleString()}</span>
+          <span className="text-xs font-bold text-slate-900">{currency} {amount?.toLocaleString() || '0'}</span>
         </div>
         <div className="mb-2 flex justify-between">
           <span className="text-xs text-slate-500">Service</span>

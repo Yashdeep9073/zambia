@@ -4,10 +4,17 @@ import {
   Building, CheckCircle, TrendingUp, Users, Shield, Globe, 
   BarChart, MapPin, Award, ChevronRight, FileText, Download, 
   Plane, Handshake, PenTool, Database, DollarSign, Activity, 
-  UserCheck, Layers, BookOpen, Target, Phone, Mail, Upload
+  UserCheck, Layers, BookOpen, Target, Phone, Mail, Upload,
+  AlertCircle
 } from 'lucide-react';
 import Footer from '../components/Footer';
+import WhatsAppFunnel from '../components/WhatsAppFunnel';
 import { PublicView, UserRole } from '../types';
+import { registerUser } from '../src/services/authService';
+import { submitFormResilient } from '../src/utils/formUtils';
+import { integrationService } from '../services/integrationService';
+import { logAppEvent } from '../src/services/analyticsService';
+import { serverTimestamp } from 'firebase/firestore';
 
 interface ForUniversitiesProps {
   onNavigate: (view: PublicView) => void;
@@ -25,7 +32,8 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
   const [formStep, setFormStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
-  const [generatedCreds, setGeneratedCreds] = useState<{id: string, user: string, pass: string} | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [generatedCreds, setGeneratedCreds] = useState<{uniId: string, email: string, password: string} | null>(null);
   const emailRef = useRef<HTMLInputElement>(null);
 
   // --- SEO OPTIMIZATION ---
@@ -77,42 +85,71 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
     setIsSubmitting(true);
     
     try {
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('../src/firebase');
-      
       const form = e.target as HTMLFormElement;
       const formData = new FormData(form);
       
-      const year = new Date().getFullYear();
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      const uniId = `UNI-${year}-${randomId}`;
-      const password = Math.random().toString(36).slice(-8).toUpperCase();
-      const email = emailRef.current?.value || "official@university.edu";
+      const universityName = formData.get('universityName') as string;
+      const websiteUrl = formData.get('websiteUrl') as string;
+      const contactName = formData.get('contactName') as string;
+      const email = formData.get('email') as string;
+      const phone = formData.get('phone') as string;
+      const naacGrade = formData.get('naacGrade') as string;
+      const nirfRanking = formData.get('nirfRanking') as string;
 
+      const password = Math.random().toString(36).slice(-8).toUpperCase();
+
+      // 1. Create Auth User & users collection document
+      const { registerUser } = await import('../src/services/authService');
+      const user = await registerUser(email, password, contactName, UserRole.PARTNER_UNIVERSITY);
+      
+      if (!user) throw new Error("User registration failed");
+
+      const uniId = `UNI-${new Date().getFullYear()}-${user.uid.slice(0, 4).toUpperCase()}`;
+      
       const creds = {
-        id: uniId,
-        user: email,
-        pass: password
+        uniId: uniId,
+        email: email,
+        password: password
       };
 
-      // Save to Firestore
-      await addDoc(collection(db, 'universities'), {
+      // 2. Save detailed university profile using new resilient handler
+      const { handleUniversityFormSubmit } = await import('../src/lib/firebase/handleUniversityFormSubmit');
+      await handleUniversityFormSubmit('registration', {
+        uid: user.uid,
         university_id: uniId,
-        email: email,
-        temporary_password: password, // In a real app, this should be hashed
+        universityName,
+        websiteUrl,
+        contactName,
+        email,
+        phone,
+        naacGrade,
+        nirfRanking,
+        temporary_password: password,
         status: 'pending_review',
-        timestamp: serverTimestamp()
-      });
+        role: UserRole.PARTNER_UNIVERSITY
+      }, user.uid);
 
       setGeneratedCreds(creds);
-      
-      // Store in localStorage (Simulating DB)
       localStorage.setItem('uni_credentials', JSON.stringify(creds));
-      
       setFormSuccess(true);
-    } catch (error) {
+      setFormError(null);
+
+      // 3. Automatic Login & Redirect after delay
+      setTimeout(() => {
+          onLogin(UserRole.PARTNER_UNIVERSITY);
+      }, 5000);
+    } catch (error: any) {
       console.error("Error submitting form:", error);
-      alert("There was an error submitting your application. Please try again.");
+      
+      let msg = "There was an error submitting your application. Please try again.";
+      if (error.code === 'auth/email-already-in-use' || error.message?.includes('email-already-in-use')) {
+        msg = "This email is already registered. If you are already a partner, please login.";
+      } else if (error.message) {
+        msg = error.message;
+      }
+      
+      setFormError(msg);
+      window.scrollTo({ top: document.getElementById('partner-form')?.offsetTop || 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +164,7 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
       
       {/* 1. HERO SECTION */}
       <div className="relative bg-slate-900 text-white min-h-[90vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/60 to-slate-900"></div>
         
         <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
@@ -488,21 +525,21 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                      </div>
                      <h3 className="text-2xl font-bold text-slate-900 mb-4">Profile Successfully Created</h3>
                      <p className="text-slate-600 mb-8 max-w-lg mx-auto">
-                        Your university dashboard has been automatically generated. Please save your credentials below to access your lead management portal.
+                        Your university dashboard has been automatically generated. You will be redirected to your portal in 5 seconds. Please save your credentials below.
                      </p>
                      
                      <div className="bg-slate-100 p-6 rounded-xl max-w-md mx-auto mb-8 text-left border border-slate-200">
                         <div className="mb-4 pb-4 border-b border-slate-200">
                             <p className="text-xs font-bold text-slate-500 uppercase mb-1">University ID</p>
-                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.id}</p>
+                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.uniId}</p>
                         </div>
                         <div className="mb-4 pb-4 border-b border-slate-200">
                             <p className="text-xs font-bold text-slate-500 uppercase mb-1">Username</p>
-                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.user}</p>
+                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.email}</p>
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-500 uppercase mb-1">Temporary Password</p>
-                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.pass}</p>
+                            <p className="text-lg font-mono font-bold text-slate-900">{generatedCreds.password}</p>
                         </div>
                      </div>
 
@@ -511,7 +548,7 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                             Login to Dashboard
                         </button>
                         <button onClick={() => {
-                            const content = `University ID: ${generatedCreds.id}\nUsername: ${generatedCreds.user}\nPassword: ${generatedCreds.pass}`;
+                            const content = `University ID: ${generatedCreds.uniId}\nUsername: ${generatedCreds.email}\nPassword: ${generatedCreds.password}`;
                             const blob = new Blob([content], { type: 'text/plain' });
                             const url = URL.createObjectURL(blob);
                             const a = document.createElement('a');
@@ -525,6 +562,24 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                   </div>
                ) : (
                   <form onSubmit={handleFormSubmit} className="p-8 md:p-12 space-y-12">
+                     {formError && (
+                        <div className="p-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-r-2xl flex items-start shadow-sm">
+                           <AlertCircle className="w-6 h-6 mr-4 mt-0.5 flex-shrink-0" />
+                           <div>
+                              <p className="font-bold text-lg">Registration Error</p>
+                              <p className="mt-1">{formError}</p>
+                              {formError.includes('already registered') && (
+                                 <button 
+                                   type="button"
+                                   onClick={() => onNavigate(PublicView.HOME)}
+                                   className="mt-3 text-sm font-bold underline hover:text-red-800 flex items-center"
+                                 >
+                                   Login to your account instead
+                                 </button>
+                              )}
+                           </div>
+                        </div>
+                     )}
                      {/* Section 1: Basic Info */}
                      <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center mb-6 border-b border-slate-200 pb-4">
@@ -534,15 +589,15 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                         <div className="grid md:grid-cols-2 gap-6">
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">University Name <span className="text-red-500">*</span></label>
-                              <input required type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Example University"/>
+                              <input required name="universityName" type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Example University"/>
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">Website URL <span className="text-red-500">*</span></label>
-                              <input required type="url" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="https://"/>
+                              <input required name="websiteUrl" type="url" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="https://"/>
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">NAAC Grade</label>
-                              <select className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium appearance-none cursor-pointer">
+                              <select name="naacGrade" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium appearance-none cursor-pointer">
                                  <option>A++</option>
                                  <option>A+</option>
                                  <option>A</option>
@@ -552,7 +607,7 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">NIRF Ranking (Approx)</label>
-                              <input type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Top 50"/>
+                              <input name="nirfRanking" type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" placeholder="e.g. Top 50"/>
                            </div>
                         </div>
                      </div>
@@ -566,15 +621,15 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                         <div className="grid md:grid-cols-2 gap-6">
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">Full Name (Director/Dean) <span className="text-red-500">*</span></label>
-                              <input required type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
+                              <input required name="contactName" type="text" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">Official Email <span className="text-red-500">*</span></label>
-                              <input required type="email" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" ref={emailRef}/>
+                              <input required name="email" type="email" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium" ref={emailRef}/>
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">Direct Phone / WhatsApp <span className="text-red-500">*</span></label>
-                              <input required type="tel" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
+                              <input required name="phone" type="tel" className="w-full bg-white border-2 border-slate-200 rounded-xl p-4 text-slate-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 outline-none transition-all font-medium"/>
                            </div>
                            <div>
                               <label className="block text-sm font-bold text-slate-700 mb-2">Office Address</label>
@@ -710,6 +765,14 @@ const ForUniversities: React.FC<ForUniversitiesProps> = ({ onNavigate, onLogin }
                <button className="bg-white text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-slate-100 transition shadow-xl">Book Strategy Call</button>
             </div>
          </div>
+      </div>
+
+      {/* WhatsApp Funnel Integration */}
+      <div className="max-w-7xl mx-auto px-4 py-20">
+        <WhatsAppFunnel 
+          title="University Partner Network"
+          context="Connect with our recruitment team and other partner institutions to optimize your Zambian student intake."
+        />
       </div>
 
       <Footer onNavigate={onNavigate} />

@@ -10,41 +10,33 @@ import {
 } from 'lucide-react';
 import { UserRole } from '../types';
 import { integrationService } from '../services/integrationService';
+import { getDashboardMetrics, listenToRecentStudents, getRevenueMetrics, listenToRecentTransactions, getPipelineCounts } from '../services/adminAnalyticsService';
+import { useAuth } from '../src/contexts/AuthContext';
+import AnalyticsDebugger from '../src/components/AnalyticsDebugger';
+import StudentManagementPage from '../src/admin/student-management/StudentManagementPage';
+import LifecycleCompletionTracker from '../src/admin/lifecycle-tracker/LifecycleCompletionTracker';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-// --- MOCK DATA ---
-const METRICS_DATA = [
-  { id: 1, title: 'Total Applications', count: '4,980', trend: '+12%', description: 'Total number of applications received since launch.', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-100', viewId: 'all_applications' },
-  { id: 2, title: 'Total Site Visitors', count: '128,400', trend: '+5%', description: 'Unique visitors to the landing page.', icon: Globe, color: 'text-purple-600', bg: 'bg-purple-100', viewId: 'traffic' },
-  { id: 3, title: 'Applications Started', count: '6,210', trend: '+8%', description: 'Users who clicked "Start Here" but haven\'t completed.', icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100', viewId: 'incomplete_apps' },
-  { id: 4, title: 'Applications Completed', count: '3,980', trend: '+15%', description: 'Fully submitted applications pending review.', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100', viewId: 'completed_apps' },
-  { id: 5, title: 'Offer Letters Issued', count: '2,450', trend: '+20%', description: 'Official offer letters sent to students.', icon: Mail, color: 'text-indigo-600', bg: 'bg-indigo-100', viewId: 'offers_issued' },
-  { id: 6, title: 'Offers Accepted', count: '1,860', trend: '+18%', description: 'Students who have accepted their offer.', icon: UserCheck, color: 'text-green-600', bg: 'bg-green-100', viewId: 'offers_accepted' },
-  { id: 7, title: 'Offers Rejected', count: '420', trend: '-2%', description: 'Students who declined the offer.', icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', viewId: 'offers_rejected' },
-  { id: 8, title: 'Acceptance Letters', count: '2,120', trend: '+10%', description: 'Final acceptance letters issued after fee payment.', icon: FileText, color: 'text-teal-600', bg: 'bg-teal-100', viewId: 'acceptance_letters' },
-  { id: 9, title: 'Visas Submitted', count: '1,540', trend: '+22%', description: 'Visa applications submitted to High Commission.', icon: Plane, color: 'text-sky-600', bg: 'bg-sky-100', viewId: 'visas_submitted' },
-  { id: 10, title: 'Visas Approved', count: '1,120', trend: '+25%', description: 'Visas successfully granted.', icon: Shield, color: 'text-green-700', bg: 'bg-green-200', viewId: 'visas_approved' },
-  { id: 11, title: 'Visas Rejected', count: '190', trend: '-5%', description: 'Visas denied by High Commission.', icon: AlertTriangle, color: 'text-red-700', bg: 'bg-red-200', viewId: 'visas_rejected' },
-  { id: 12, title: 'Ready to Travel', count: '980', trend: '+30%', description: 'Students with Visa and Ticket ready.', icon: Briefcase, color: 'text-yellow-600', bg: 'bg-yellow-100', viewId: 'ready_travel' },
-  { id: 13, title: 'Travelled', count: '870', trend: '+28%', description: 'Students who have arrived in India.', icon: Plane, color: 'text-blue-800', bg: 'bg-blue-200', viewId: 'travelled' },
-  { id: 14, title: 'Enrolled Students', count: '1,640', trend: '+12%', description: 'Active students currently studying.', icon: Database, color: 'text-slate-800', bg: 'bg-slate-200', viewId: 'enrolled' },
-  { id: 15, title: 'Total Alumni', count: '4,200', trend: '+4%', description: 'Graduated students in the network.', icon: Users, color: 'text-pink-600', bg: 'bg-pink-100', viewId: 'alumni' },
-];
-
-const MOCK_STUDENTS = [
-  { id: 'ZII-2025-1001', name: 'John Phiri', uni: 'CT University', course: 'B.Tech CS', status: 'Offer Issued', date: '2025-01-15', engagement: 85, risk: 'Low', lastLogin: '2h ago' },
-  { id: 'ZII-2025-1002', name: 'Mary Banda', uni: 'Lovely Professional', course: 'BBA', status: 'Visa Approved', date: '2025-01-12', engagement: 92, risk: 'Low', lastLogin: '1d ago' },
-  { id: 'ZII-2025-1003', name: 'Peter Zulu', uni: 'Chandigarh University', course: 'MBA', status: 'Application Review', date: '2025-01-18', engagement: 45, risk: 'Medium', lastLogin: '5d ago' },
-  { id: 'ZII-2025-1004', name: 'Sarah Lungu', uni: 'CT University', course: 'B.Sc Nursing', status: 'Offer Accepted', date: '2025-01-10', engagement: 78, risk: 'Low', lastLogin: '3h ago' },
-  { id: 'ZII-2025-1005', name: 'David Mumba', uni: 'Sharda University', course: 'Civil Eng', status: 'Rejected', date: '2025-01-05', engagement: 12, risk: 'High', lastLogin: '2w ago' },
-  { id: 'ZII-2025-1006', name: 'Grace Mulenga', uni: 'CT University', course: 'Pharmacy', status: 'Travelled', date: '2024-12-20', engagement: 95, risk: 'Low', lastLogin: '1h ago' },
-  { id: 'ZII-2025-1007', name: 'Joseph Tembo', uni: 'Amity University', course: 'B.Com', status: 'Visa Pending', date: '2025-01-14', engagement: 60, risk: 'Medium', lastLogin: '3d ago' },
-  { id: 'ZII-2025-1008', name: 'Esther Sakala', uni: 'CT University', course: 'Medicine', status: 'Enrolled', date: '2024-08-15', engagement: 88, risk: 'Low', lastLogin: '4h ago' },
-  { id: 'ZII-2025-1009', name: 'Brian Chanda', uni: 'SRM University', course: 'B.Arch', status: 'New', date: '2025-01-19', engagement: 30, risk: 'High', lastLogin: 'Never' },
-  { id: 'ZII-2025-1010', name: 'Catherine Mwape', uni: 'CT University', course: 'Law', status: 'Scholarship Check', date: '2025-01-19', engagement: 70, risk: 'Low', lastLogin: '12h ago' },
+// --- METRICS CONFIG ---
+const METRICS_CONFIG = [
+  { id: 1, title: 'Total Applications', key: 'total_applications', description: 'Total number of applications received since launch.', icon: FileText, color: 'text-blue-600', bg: 'bg-blue-100', viewId: 'all_applications' },
+  { id: 2, title: 'Total Site Visitors', key: 'total_visitors', description: 'Unique visitors to the landing page.', icon: Globe, color: 'text-purple-600', bg: 'bg-purple-100', viewId: 'traffic' },
+  { id: 3, title: 'Applications Started', key: 'applications_started', description: 'Users who clicked "Start Here" but haven\'t completed.', icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100', viewId: 'incomplete_apps' },
+  { id: 4, title: 'Applications Completed', key: 'applications_completed', description: 'Fully submitted applications pending review.', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100', viewId: 'completed_apps' },
+  { id: 5, title: 'Offer Letters Issued', key: 'offers_issued', description: 'Official offer letters sent to students.', icon: Mail, color: 'text-indigo-600', bg: 'bg-indigo-100', viewId: 'offers_issued' },
+  { id: 6, title: 'Offers Accepted', key: 'offers_accepted', description: 'Students who have accepted their offer.', icon: UserCheck, color: 'text-green-600', bg: 'bg-green-100', viewId: 'offers_accepted' },
+  { id: 7, title: 'Offers Rejected', key: 'offers_rejected', description: 'Students who declined the offer.', icon: XCircle, color: 'text-red-600', bg: 'bg-red-100', viewId: 'offers_rejected' },
+  { id: 8, title: 'Acceptance Letters', key: 'acceptance_letters', description: 'Final acceptance letters issued after fee payment.', icon: FileText, color: 'text-teal-600', bg: 'bg-teal-100', viewId: 'acceptance_letters' },
+  { id: 9, title: 'Visas Submitted', key: 'visas_submitted', description: 'Visa applications submitted to High Commission.', icon: Plane, color: 'text-sky-600', bg: 'bg-sky-100', viewId: 'visas_submitted' },
+  { id: 10, title: 'Visas Approved', key: 'visas_approved', description: 'Visas successfully granted.', icon: Shield, color: 'text-green-700', bg: 'bg-green-200', viewId: 'visas_approved' },
+  { id: 11, title: 'Visas Rejected', key: 'visas_rejected', description: 'Visas denied by High Commission.', icon: AlertTriangle, color: 'text-red-700', bg: 'bg-red-200', viewId: 'visas_rejected' },
+  { id: 12, title: 'Ready to Travel', key: 'ready_travel', description: 'Students with Visa and Ticket ready.', icon: Briefcase, color: 'text-yellow-600', bg: 'bg-yellow-100', viewId: 'ready_travel' },
+  { id: 13, title: 'Travelled', key: 'travelled', description: 'Students who have arrived in India.', icon: Plane, color: 'text-blue-800', bg: 'bg-blue-200', viewId: 'travelled' },
+  { id: 14, title: 'Enrolled Students', key: 'enrolled', description: 'Active students currently studying.', icon: Database, color: 'text-slate-800', bg: 'bg-slate-200', viewId: 'enrolled' },
+  { id: 15, title: 'Total Alumni', key: 'alumni', description: 'Graduated students in the network.', icon: Users, color: 'text-pink-600', bg: 'bg-pink-100', viewId: 'alumni' },
 ];
 
 const SIDEBAR_SECTIONS = [
@@ -52,6 +44,7 @@ const SIDEBAR_SECTIONS = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'analytics', label: 'Analytics & Reports', icon: BarChart2 },
     { id: 'students', label: 'Student Management', icon: Users },
+    { id: 'lifecycle', label: 'Lifecycle Tracker', icon: Activity },
     { id: 'pipeline', label: 'Applications Pipeline', icon: Activity },
     { id: 'waiting_room', label: 'Waiting Room Monitor', icon: Clock },
   ]},
@@ -398,11 +391,11 @@ const StudentProfilePanel = ({ student, onClose }: { student: any, onClose: () =
                 <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="text-xs font-bold text-slate-400 uppercase">Email</label>
-                      <p className="font-medium text-slate-800">student@example.com</p>
+                      <p className="font-medium text-slate-800">{student.email || 'N/A'}</p>
                    </div>
                    <div>
                       <label className="text-xs font-bold text-slate-400 uppercase">Phone</label>
-                      <p className="font-medium text-slate-800">+260 762 523 854</p>
+                      <p className="font-medium text-slate-800">{student.phone || 'N/A'}</p>
                    </div>
                    <div>
                       <label className="text-xs font-bold text-slate-400 uppercase">Target University</label>
@@ -471,28 +464,9 @@ const StudentProfilePanel = ({ student, onClose }: { student: any, onClose: () =
 
 // --- REVENUE & FORECAST COMPONENTS ---
 
-const RevenuePanel = () => {
-  const [transactions, setTransactions] = useState<any[]>([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('zii_transactions');
-    if (saved) {
-      setTransactions(JSON.parse(saved));
-    } else {
-      // Add some mock data if empty
-      const mocks = [
-        { id: 'ZYN-1001', studentName: 'John Phiri', service: 'Application Fee', amount: 150, currency: 'ZMW', date: '2025-01-15', status: 'Success' },
-        { id: 'ZYN-1002', studentName: 'Mary Banda', service: 'Visa Assist', amount: 250, currency: 'ZMW', date: '2025-01-16', status: 'Success' },
-        { id: 'ZYN-1003', studentName: 'Peter Zulu', service: 'Premium Fast Track', amount: 750, currency: 'ZMW', date: '2025-01-18', status: 'Success' },
-      ];
-      setTransactions(mocks);
-    }
-  }, []);
-
-  const totalRevenue = transactions.reduce((acc, curr) => acc + curr.amount, 0);
-  
+const RevenuePanel = ({ revenueMetrics, recentTransactions }: { revenueMetrics: any, recentTransactions: any[] }) => {
   // Group by service for "Category" chart
-  const byCategory = transactions.reduce((acc: any, curr) => {
+  const byCategory = recentTransactions.reduce((acc: any, curr) => {
     acc[curr.service] = (acc[curr.service] || 0) + curr.amount;
     return acc;
   }, {});
@@ -504,18 +478,18 @@ const RevenuePanel = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Total Revenue (YTD)</h3>
-          <div className="text-3xl font-extrabold text-slate-900">ZMW {totalRevenue.toLocaleString()}</div>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW {revenueMetrics?.totalRevenue?.toLocaleString() || '0'}</div>
           <div className="text-xs text-green-600 font-bold mt-1 flex items-center"><TrendingUp className="w-3 h-3 mr-1"/> +12% vs last month</div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Pending Payments</h3>
-          <div className="text-3xl font-extrabold text-slate-900">ZMW 4,250</div>
-          <div className="text-xs text-orange-500 font-bold mt-1">7 invoices outstanding</div>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW {revenueMetrics?.pendingPayments?.toLocaleString() || '0'}</div>
+          <div className="text-xs text-orange-500 font-bold mt-1">Pending invoices</div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Avg. Transaction</h3>
-          <div className="text-3xl font-extrabold text-slate-900">ZMW 320</div>
-          <div className="text-xs text-slate-400 font-bold mt-1">Based on {transactions.length} transactions</div>
+          <div className="text-3xl font-extrabold text-slate-900">ZMW {revenueMetrics?.avgTransactionValue?.toLocaleString() || '0'}</div>
+          <div className="text-xs text-slate-400 font-bold mt-1">Based on recent transactions</div>
         </div>
       </div>
 
@@ -524,7 +498,7 @@ const RevenuePanel = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="font-bold text-slate-800 mb-4">Recent Transactions</h3>
           <div className="overflow-y-auto max-h-80 space-y-3">
-            {transactions.map((tx, i) => (
+            {recentTransactions.map((tx, i) => (
               <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-xl border border-transparent hover:border-slate-100 transition">
                 <div className="flex items-center">
                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
@@ -536,7 +510,7 @@ const RevenuePanel = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900">+{tx.currency} {tx.amount.toLocaleString()}</p>
+                  <p className="text-sm font-bold text-slate-900">+{tx.currency} {tx.amount?.toLocaleString() || '0'}</p>
                   <p className="text-[10px] uppercase font-bold text-green-600">{tx.status}</p>
                 </div>
               </div>
@@ -552,7 +526,7 @@ const RevenuePanel = () => {
               <div key={cat}>
                 <div className="flex justify-between text-xs font-bold mb-1">
                   <span className="text-slate-600">{cat}</span>
-                  <span className="text-slate-900">ZMW {amount.toLocaleString()}</span>
+                  <span className="text-slate-900">ZMW {amount?.toLocaleString() || '0'}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2">
                   <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${(amount / maxCat) * 100}%` }}></div>
@@ -585,7 +559,7 @@ const ForecastPanel = () => {
           <div>
             <label className="flex justify-between text-sm font-bold text-slate-700 mb-2">
               <span>Monthly Traffic</span>
-              <span className="text-blue-600">{traffic.toLocaleString()} visitors</span>
+              <span className="text-blue-600">{traffic?.toLocaleString() || '0'} visitors</span>
             </label>
             <input 
               type="range" min="1000" max="50000" step="1000" 
@@ -622,9 +596,9 @@ const ForecastPanel = () => {
         <div className="bg-slate-900 text-white p-8 rounded-2xl flex flex-col justify-center items-center text-center relative overflow-hidden">
            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
            <p className="text-slate-400 font-bold uppercase tracking-widest mb-2 relative z-10">Projected Monthly Revenue</p>
-           <h3 className="text-5xl font-extrabold text-green-400 mb-4 relative z-10">ZMW {projectedRevenue.toLocaleString()}</h3>
+           <h3 className="text-5xl font-extrabold text-green-400 mb-4 relative z-10">ZMW {projectedRevenue?.toLocaleString() || '0'}</h3>
            <p className="text-sm text-slate-400 relative z-10">
-             Based on {traffic.toLocaleString()} visitors converting at {conversionRate}%.
+             Based on {traffic?.toLocaleString() || '0'} visitors converting at {conversionRate}%.
            </p>
            <button className="mt-8 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition relative z-10">
              Export Report
@@ -636,16 +610,89 @@ const ForecastPanel = () => {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+  const { user, loading: authLoading } = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
+
+  const isAdmin = user && (
+    ['maorderzambia@gmail.com', 'zambiansinindia@gmail.com'].includes(user.email || '')
+  );
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin && user) {
+      onLogout(); // Force logout if not admin
+    }
+  }, [user, authLoading, isAdmin, onLogout]);
+
   const [selectedMetric, setSelectedMetric] = useState<any | null>(null);
   const [showInfoModal, setShowInfoModal] = useState<any | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
+  // Live Data State
+  const [metrics, setMetrics] = useState<any[]>(METRICS_CONFIG.map(m => ({ ...m, count: '...', trend: '-' })));
+  const [recentStudents, setRecentStudents] = useState<any[]>([]);
+  const [revenueMetrics, setRevenueMetrics] = useState<any>({ totalRevenue: 0, pendingPayments: 0, avgTransactionValue: 0 });
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [pipelineCounts, setPipelineCounts] = useState<any>({});
+  const [isLoading, setIsLoading] = useState(true);
+
   // Auto-close sidebar on mobile initial load
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, []);
+
+  // Fetch Live Data
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // 1. Fetch Aggregated Metrics
+        const dashboardMetrics = await getDashboardMetrics();
+        
+        // Merge with config
+        const updatedMetrics = METRICS_CONFIG.map(config => {
+          const data = dashboardMetrics[config.key] || { count: 0, trend: '0%' };
+          return {
+            ...config,
+            count: typeof data.count === 'number' ? data.count.toLocaleString() : data.count,
+            trend: data.trend || '0%'
+          };
+        });
+        setMetrics(updatedMetrics);
+
+        // 2. Fetch Revenue Metrics
+        const revMetrics = await getRevenueMetrics();
+        setRevenueMetrics(revMetrics);
+
+        // 3. Fetch Pipeline Counts
+        const pipeline = await getPipelineCounts();
+        setPipelineCounts(pipeline);
+
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+
+    // 4. Setup Real-time Listeners
+    const unsubscribeStudents = listenToRecentStudents(10, (students) => {
+      setRecentStudents(students);
+    });
+
+    const unsubscribeTransactions = listenToRecentTransactions(10, (transactions) => {
+      setRecentTransactions(transactions);
+    });
+
+    return () => {
+      unsubscribeStudents();
+      unsubscribeTransactions();
+    };
+  }, [user, authLoading]);
 
   // --- RENDER FUNCTIONS ---
 
@@ -656,7 +703,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
          <p className="text-slate-500">Real-time system performance metrics.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {METRICS_DATA.map((metric) => (
+        {metrics.map((metric) => (
           <MetricCard 
             key={metric.id} 
             metric={metric} 
@@ -671,14 +718,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
          <h3 className="font-bold text-slate-800 mb-6">Application Pipeline Flow</h3>
          <div className="flex flex-col md:flex-row justify-between items-center relative gap-6 md:gap-0">
             <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-0 hidden md:block"></div>
-            {['Visitors', 'Started', 'Completed', 'Offers', 'Visas', 'Enrolled'].map((stage, idx) => (
-               <div key={stage} className="relative z-10 flex flex-col items-center group cursor-pointer w-full md:w-auto">
-                  <div className="w-10 h-10 rounded-full bg-white border-4 border-emerald-500 shadow-md flex items-center justify-center font-bold text-emerald-700 group-hover:scale-110 transition">
-                     {idx + 1}
-                  </div>
-                  <span className="mt-2 text-xs font-bold text-slate-600 uppercase bg-white px-2">{stage}</span>
-               </div>
-            ))}
+            {['Visitors', 'Started', 'Completed', 'Offers', 'Visas', 'Enrolled'].map((stage, idx) => {
+               const stageKeys = ['visitors', 'started', 'completed', 'offers', 'visas', 'enrolled'];
+               const count = pipelineCounts[stageKeys[idx]] || 0;
+               return (
+                 <div key={stage} className="relative z-10 flex flex-col items-center group cursor-pointer w-full md:w-auto">
+                    <div className="w-10 h-10 rounded-full bg-white border-4 border-emerald-500 shadow-md flex items-center justify-center font-bold text-emerald-700 group-hover:scale-110 transition">
+                       {idx + 1}
+                    </div>
+                    <span className="mt-2 text-xs font-bold text-slate-600 uppercase bg-white px-2">{stage}</span>
+                    <span className="text-sm font-extrabold text-slate-800 mt-1">{count.toLocaleString()}</span>
+                 </div>
+               );
+            })}
          </div>
       </div>
     </>
@@ -691,7 +743,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         </button>
         <DataTable 
            title={selectedMetric?.title || 'Data View'} 
-           data={MOCK_STUDENTS}
+           data={recentStudents}
            onViewProfile={setSelectedStudent}
         />
      </div>
@@ -778,10 +830,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
          {/* Content Area */}
          <div className="flex-1 overflow-auto p-4 lg:p-8">
-            {activeView === 'dashboard' ? renderDashboardGrid() : 
+            {activeView === 'dashboard' ? (
+               <div className="space-y-8">
+                  <LifecycleCompletionTracker />
+                  {renderDashboardGrid()}
+               </div>
+            ) : 
+              activeView === 'lifecycle' ? <LifecycleCompletionTracker /> :
+              activeView === 'students' ? <StudentManagementPage /> :
              activeView === 'integrations' ? <IntegrationsPanel /> : 
-             activeView === 'revenue' ? <RevenuePanel /> :
+             activeView === 'revenue' ? <RevenuePanel revenueMetrics={revenueMetrics} recentTransactions={recentTransactions} /> :
              activeView === 'forecast' ? <ForecastPanel /> :
+             activeView === 'analytics' ? <AnalyticsDebugger /> :
              activeView === 'detail' ? renderDetailView() : 
              <div className="text-center text-slate-400 py-20 font-bold">Module Under Development</div>}
          </div>

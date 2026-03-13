@@ -7,6 +7,7 @@ import {
   Headphones, FileCheck, Syringe, Car
 } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
+import WhatsAppFunnel from '../components/WhatsAppFunnel';
 
 const STAGES = [
   { id: 1, label: "Passport", icon: FileText },
@@ -327,7 +328,7 @@ const PreDepartureGuide = () => {
                      </div>
                      
                      <div className="bg-slate-900 rounded-2xl overflow-hidden relative group cursor-pointer h-48 md:h-auto border-4 border-white shadow-lg">
-                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160550-217358c7e618?q=80&w=2070')] bg-cover bg-center opacity-50"></div>
+                        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160550-217358c7e618?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-50"></div>
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
                            <Play className="w-12 h-12 mb-2 fill-current"/>
                            <span className="font-bold text-sm uppercase tracking-widest">Must Watch Guide</span>
@@ -555,6 +556,14 @@ const PreDepartureGuide = () => {
                "Students often feel overwhelmed at this stage. That is normal. Every challenge you overcome now builds resilience for your international journey."
             </p>
             <button className="mt-4 text-orange-600 font-bold text-sm hover:underline">Need Help? Contact ZII Office</button>
+         </div>
+
+         {/* WhatsApp Funnel Integration */}
+         <div className="mt-16">
+            <WhatsAppFunnel 
+               title="Visa & Travel Support Groups"
+               context="Join our specialized groups for visa documentation assistance and flight coordination."
+            />
          </div>
 
       </div>

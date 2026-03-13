@@ -5,13 +5,14 @@ import Navigation from './components/Navigation';
 import Sidebar from './components/Sidebar';
 import ChatBot from './components/ChatBot';
 import SmartLoader from './components/SmartLoader'; // Import SmartLoader
+import GlobalScrollIndicator from './src/components/GlobalScrollIndicator';
 import { MessageSquare, Phone, Mic, X, Loader, Wifi, Volume2, ExternalLink, AlertCircle, School, MessageCircle } from 'lucide-react';
 
-import { AuthProvider } from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 // Lazy Load Pages
 const LandingPage = lazy(() => import('./pages/LandingPage'));
-const PublicPages = lazy(() => import('./pages/PublicPages'));
+import PublicPages from './pages/PublicPages';
 const DashboardFlow = lazy(() => import('./pages/DashboardFlow'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -26,11 +27,20 @@ const App: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  const { user, role: authRole, loading: authLoading } = useAuth();
+  
   // Initialize state from localStorage if available
   const [userRole, setUserRole] = useState<UserRole | null>(() => {
     const saved = localStorage.getItem('zii_user_role');
     return saved ? (saved as UserRole) : null;
   });
+
+  // Sync with AuthContext
+  useEffect(() => {
+    if (!authLoading) {
+      setUserRole(authRole);
+    }
+  }, [authRole, authLoading]);
   
   const [currentPhase, setCurrentPhase] = useState<AppPhase>(() => {
     const saved = localStorage.getItem('zii_current_phase');
@@ -53,6 +63,21 @@ const AppContent: React.FC = () => {
   const [callStatus, setCallStatus] = useState<'searching' | 'connecting' | 'failed'>('searching');
   const [countdown, setCountdown] = useState(20);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Persistence Effects
   useEffect(() => {
@@ -294,6 +319,9 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative pb-20 lg:pb-0">
+      {/* GLOBAL SCROLL INDICATOR */}
+      <GlobalScrollIndicator />
+      
       {/* GLOBAL LOADING OVERLAY */}
       <SmartLoader loading={isLoading} />
 
@@ -405,6 +433,13 @@ const AppContent: React.FC = () => {
       {/* Global ChatBot Component (Must be rendered to receive events) */}
       <ChatBot />
 
+      {isOffline && (
+        <div className="fixed bottom-0 left-0 w-full bg-slate-900 text-white text-center py-2 z-[9999] flex items-center justify-center text-sm font-medium border-t border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+          <Wifi className="w-4 h-4 mr-2 text-orange-500" />
+          You are currently offline. Forms will sync when connection is restored.
+        </div>
+      )}
+
       {!userRole ? (
         <>
             {currentView === PublicView.HOME ? (
@@ -441,7 +476,9 @@ const AppContent: React.FC = () => {
       
       {/* GLOBAL WIDGETS (Only for students/public) */}
       {userRole !== UserRole.ADMIN_CONSULTANT && userRole !== UserRole.PARTNER_UNIVERSITY && (
-        <GlobalWidgets />
+        <>
+          <GlobalWidgets />
+        </>
       )}
     </div>
   );

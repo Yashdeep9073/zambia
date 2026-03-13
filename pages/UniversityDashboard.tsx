@@ -1,14 +1,31 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building, Users, Mail, CheckCircle, DollarSign, Plane, 
   User, LayoutDashboard, FileText, BarChart, Bell, Settings, 
   LogOut, Upload, Search, Download, AlertTriangle, Shield, 
   MessageSquare, Menu, X, Filter, ChevronRight, Briefcase, 
   Globe, Megaphone, Target, Video, Phone, Star, MapPin, Clock,
-  Calendar
+  Calendar, TrendingUp
 } from 'lucide-react';
 import PaymentModal from '../components/PaymentModal';
+import { auth, db } from '../src/firebase';
+import { 
+  doc, 
+  onSnapshot, 
+  collection, 
+  query, 
+  where, 
+  orderBy,
+  getDoc
+} from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../src/utils/firestoreUtils';
+import UniversityProfilePanel from '../src/university-dashboard/UniversityProfilePanel';
+import StudentApplicationsTable from '../src/university-dashboard/StudentApplicationsTable';
+import RecruitmentFunnelChart from '../src/university-dashboard/RecruitmentFunnelChart';
+import LeadsManagement from '../src/university-dashboard/LeadsManagement';
+import MarketingHub from '../src/university-dashboard/MarketingHub';
+import SupportCenter from '../src/university-dashboard/SupportCenter';
 
 interface UniversityDashboardProps {
   onLogout: () => void;
@@ -66,9 +83,81 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
   const [currentView, setCurrentView] = useState<'overview' | 'students' | 'leads' | 'marketing' | 'settings' | 'exhibition'>('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  // Real Data State
+  const [universityProfile, setUniversityProfile] = useState<any>(null);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // Payment State
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentService, setPaymentService] = useState<{name: string, amount: number} | null>(null);
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // 1. Listen to University Profile
+    const profilePath = `universities/${user.uid}`;
+    const unsubscribeProfile = onSnapshot(doc(db, 'universities', user.uid), (doc) => {
+      if (doc.exists()) {
+        setUniversityProfile({ id: doc.id, ...doc.data() });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Profile listener error:", error);
+      handleFirestoreError(error, OperationType.GET, profilePath);
+      setLoading(false);
+    });
+
+    // 2. Listen to Student Applications
+    // Note: We check both universityId and university_id in the rules, 
+    // but here we query by universityId as it's the primary field used in the dashboard
+    const appsPath = 'applications';
+    const q = query(
+      collection(db, 'applications'), 
+      where('universityId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribeApps = onSnapshot(q, (snapshot) => {
+      const apps = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        studentName: doc.data().studentName || 'Unknown Student',
+        course: doc.data().course || 'N/A',
+        status: doc.data().status || 'New',
+        stage: doc.data().stage || 'Application'
+      }));
+      setApplications(apps);
+    }, (error) => {
+      console.error("Applications listener error:", error);
+      handleFirestoreError(error, OperationType.LIST, appsPath);
+    });
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeApps();
+    };
+  }, []);
+
+  // Derived Metrics
+  const metrics = [
+    { id: 1, title: 'Total Leads', count: applications.length.toString(), bg: 'bg-blue-50', color: 'text-blue-600', icon: Upload },
+    { id: 2, title: 'Active Apps', count: applications.filter(a => a.status !== 'Enrolled' && a.status !== 'Rejected').length.toString(), bg: 'bg-orange-50', color: 'text-orange-600', icon: FileText },
+    { id: 3, title: 'Offers Issued', count: applications.filter(a => a.status === 'Offer Issued').length.toString(), bg: 'bg-purple-50', color: 'text-purple-600', icon: Mail },
+    { id: 4, title: 'Enrolled', count: applications.filter(a => a.status === 'Enrolled').length.toString(), bg: 'bg-slate-100', color: 'text-slate-800', icon: Building },
+    { id: 5, title: 'Conversion', count: applications.length > 0 ? `${Math.round((applications.filter(a => a.status === 'Enrolled').length / applications.length) * 100)}%` : '0%', bg: 'bg-emerald-100', color: 'text-emerald-800', icon: BarChart },
+  ];
+
+  const funnelData = [
+    { name: 'Leads', value: applications.length, color: '#3b82f6' },
+    { name: 'Offers', value: applications.filter(a => ['Offer Issued', 'Offer Accepted', 'Enrolled'].includes(a.status)).length, color: '#8b5cf6' },
+    { name: 'Accepted', value: applications.filter(a => ['Offer Accepted', 'Enrolled'].includes(a.status)).length, color: '#10b981' },
+    { name: 'Enrolled', value: applications.filter(a => a.status === 'Enrolled').length, color: '#0f172a' },
+  ];
 
   const handlePaymentSuccess = (tid: string) => {
     setPaymentModalOpen(false);
@@ -99,7 +188,7 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
             <Building className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">{UNI_NAME}</h1>
+            <h1 className="font-bold text-lg leading-tight">{universityProfile?.universityName || 'University'}</h1>
             <p className="text-xs text-slate-500 uppercase tracking-wider">Partner Portal</p>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto p-2 hover:bg-slate-50 rounded-full"><X className="w-5 h-5"/></button>
@@ -112,6 +201,7 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
           <SidebarItem id="leads" label="Lead Management" icon={Filter} />
           <SidebarItem id="marketing" label="Marketing & Campaigns" icon={Megaphone} />
           <SidebarItem id="exhibition" label="Exhibition Booking" icon={Calendar} />
+          <SidebarItem id="support" label="Support Center" icon={MessageSquare} />
           
           <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2">Admissions</p>
           <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition">
@@ -125,7 +215,10 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
           </button>
 
           <p className="px-4 text-xs font-bold text-slate-400 uppercase tracking-widest mt-6 mb-2">Support</p>
-          <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition">
+          <button 
+            onClick={() => window.dispatchEvent(new Event('open-chat-bot'))}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-emerald-800 transition"
+          >
              <MessageSquare className="w-5 h-5" /> <span>ZII Consultant</span>
           </button>
         </div>
@@ -166,7 +259,7 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
               <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
             <div className="w-8 h-8 rounded-full bg-emerald-900 text-white flex items-center justify-center font-bold text-xs">
-              CT
+              {universityProfile?.universityName?.substring(0, 2).toUpperCase() || 'UN'}
             </div>
           </div>
         </header>
@@ -176,10 +269,13 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
           
           {/* OVERVIEW DASHBOARD */}
           {currentView === 'overview' && (
-            <div className="animate-fade-in-up">
+            <div className="animate-fade-in-up space-y-8">
+              {/* Profile Summary */}
+              <UniversityProfilePanel profile={universityProfile} />
+
               {/* Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                {UNI_METRICS.map((metric) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {metrics.map((metric) => (
                   <div key={metric.id} className="bg-white p-5 rounded-2xl border border-slate-100 hover:shadow-lg transition cursor-pointer group relative overflow-hidden">
                     <div className={`absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition ${metric.color}`}>
                       <metric.icon className="w-12 h-12" />
@@ -193,177 +289,55 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
                 ))}
               </div>
 
-              {/* Pipeline Visualization */}
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 mb-8">
-                <h3 className="font-bold text-slate-800 mb-6 text-lg">Student Pipeline Tracker</h3>
-                <div className="flex flex-col md:flex-row justify-between items-center relative gap-6 md:gap-0">
-                   <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-0 hidden md:block"></div>
-                   {['Lead', 'Application', 'Offer Letter', 'Acceptance', 'Visa', 'Arrival', 'Enrolled'].map((step, i) => (
-                      <div key={step} className="relative z-10 flex flex-col items-center bg-white p-2 w-full md:w-auto">
-                         <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm border-4 transition ${i < 4 ? 'bg-emerald-500 text-white border-emerald-200' : 'bg-white text-slate-400 border-slate-200'}`}>
-                            {i + 1}
-                         </div>
-                         <span className="mt-2 text-xs font-bold text-slate-600 uppercase">{step}</span>
-                      </div>
-                   ))}
+              {/* Charts & Funnel */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <RecruitmentFunnelChart data={funnelData} />
+                
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                  <h3 className="font-bold text-slate-800 mb-6 text-lg">Pipeline Status</h3>
+                  <div className="space-y-4">
+                    {['Lead', 'Application', 'Offer Letter', 'Acceptance', 'Visa', 'Arrival', 'Enrolled'].map((step, i) => {
+                      const count = applications.filter(a => a.stage === step).length;
+                      const percentage = applications.length > 0 ? (count / applications.length) * 100 : 0;
+                      return (
+                        <div key={step} className="space-y-1">
+                          <div className="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <span>{step}</span>
+                            <span>{count} Students</span>
+                          </div>
+                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-emerald-500 transition-all duration-1000" 
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
               {/* Recent Activity Table (Preview) */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                   <h3 className="font-bold text-slate-800">Recent Student Activity</h3>
-                   <button onClick={() => setCurrentView('students')} className="text-emerald-600 text-sm font-bold hover:underline">View All</button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-600">
-                    <thead className="bg-slate-50 text-xs uppercase font-bold text-slate-500">
-                      <tr>
-                        <th className="px-6 py-4 whitespace-nowrap">Student ID</th>
-                        <th className="px-6 py-4 whitespace-nowrap">Name</th>
-                        <th className="px-6 py-4 whitespace-nowrap">Course</th>
-                        <th className="px-6 py-4 whitespace-nowrap">Status</th>
-                        <th className="px-6 py-4 whitespace-nowrap">Source</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {MOCK_STUDENTS.map(s => (
-                        <tr key={s.id} className="hover:bg-slate-50 transition">
-                          <td className="px-6 py-4 font-mono text-slate-400 font-bold whitespace-nowrap">{s.id}</td>
-                          <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">{s.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{s.course}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
-                              {s.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-xs font-bold text-slate-500 whitespace-nowrap">{s.uploadedBy === 'Uni' ? 'University Upload' : 'ZII Assignment'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StudentApplicationsTable applications={applications.slice(0, 5)} />
             </div>
           )}
 
           {/* STUDENTS LIST VIEW */}
           {currentView === 'students' && (
-             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden animate-fade-in-up">
-                <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                   <div>
-                      <h3 className="font-bold text-xl text-slate-900">Student Database</h3>
-                      <p className="text-sm text-slate-500">Restricted View: {UNI_NAME} Students Only</p>
-                   </div>
-                   <div className="flex gap-2 w-full md:w-auto">
-                      <div className="relative flex-1 md:flex-none">
-                         <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
-                         <input type="text" placeholder="Search students..." className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"/>
-                      </div>
-                      <button className="flex items-center bg-slate-900 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-800 whitespace-nowrap">
-                         <Download className="w-4 h-4 mr-2"/> Export CSV
-                      </button>
-                   </div>
-                </div>
-                <div className="p-12 text-center text-slate-500">
-                   <p className="mb-4">Full student list available in database mode.</p>
-                   <button className="text-emerald-600 font-bold hover:underline" onClick={() => setCurrentView('overview')}>Back to Dashboard</button>
-                </div>
+             <div className="animate-fade-in-up">
+                <StudentApplicationsTable applications={applications} />
              </div>
           )}
 
           {/* MARKETING VIEW */}
           {currentView === 'marketing' && (
-             <div className="animate-fade-in-up">
-                <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-3xl p-8 text-white mb-8 shadow-lg">
-                   <div className="flex justify-between items-start">
-                      <div>
-                         <h2 className="text-3xl font-extrabold mb-2">Marketing Hub</h2>
-                         <p className="text-orange-100">Collaborate with ZII to boost your enrollments.</p>
-                      </div>
-                      <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
-                         <Megaphone className="w-8 h-8 text-white"/>
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                      <div className="bg-black/20 p-4 rounded-xl backdrop-blur-sm">
-                         <p className="text-xs uppercase font-bold text-orange-200 mb-1">Total Impressions</p>
-                         <p className="text-2xl font-bold">1.2M</p>
-                      </div>
-                      <div className="bg-black/20 p-4 rounded-xl backdrop-blur-sm">
-                         <p className="text-xs uppercase font-bold text-orange-200 mb-1">Leads Generated</p>
-                         <p className="text-2xl font-bold">450</p>
-                      </div>
-                      <div className="bg-black/20 p-4 rounded-xl backdrop-blur-sm">
-                         <p className="text-xs uppercase font-bold text-orange-200 mb-1">Campaign ROI</p>
-                         <p className="text-2xl font-bold">450%</p>
-                      </div>
-                   </div>
-                </div>
-
-                <h3 className="font-bold text-slate-900 text-xl mb-6">Active Strategies & Campaigns</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {MARKETING_STRATEGIES.map((strat) => (
-                      <div key={strat.id} className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition cursor-pointer group">
-                         <div className="flex justify-between items-start mb-4">
-                            <div className="bg-slate-50 p-3 rounded-xl group-hover:bg-orange-50 group-hover:text-orange-600 transition text-slate-500">
-                               <Target className="w-6 h-6"/>
-                            </div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${strat.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                               {strat.status}
-                            </span>
-                         </div>
-                         <h4 className="font-bold text-slate-800 mb-2">{strat.title}</h4>
-                         <div className="flex items-center text-xs font-medium text-slate-500">
-                            <span className={`w-2 h-2 rounded-full mr-2 ${strat.impact === 'High' ? 'bg-red-500' : 'bg-blue-500'}`}></span>
-                            {strat.impact} Impact Strategy
-                         </div>
-                      </div>
-                   ))}
-                </div>
-             </div>
+             <MarketingHub universityProfile={universityProfile} />
           )}
 
           {/* LEADS MANAGEMENT VIEW */}
           {currentView === 'leads' && (
-             <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 animate-fade-in-up">
-                <div className="max-w-2xl mx-auto">
-                   <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                         <Upload className="w-8 h-8"/>
-                      </div>
-                      <h2 className="text-2xl font-bold text-slate-900">Upload New Leads</h2>
-                      <p className="text-slate-500">Add prospective students to your pipeline manually or via CSV.</p>
-                   </div>
-
-                   <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition mb-8 group">
-                      <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4 group-hover:text-blue-500 transition"/>
-                      <p className="font-bold text-slate-700">Drag & Drop CSV File</p>
-                      <p className="text-xs text-slate-500 mt-2">Columns: Name, Email, Phone, Course, Intake</p>
-                   </div>
-
-                   <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                         <div className="w-full border-t border-slate-200"></div>
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                         <span className="px-2 bg-white text-slate-500 font-bold uppercase">Or Enter Manually</span>
-                      </div>
-                   </div>
-
-                   <form className="mt-8 space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <input type="text" placeholder="First Name" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"/>
-                         <input type="text" placeholder="Last Name" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"/>
-                      </div>
-                      <input type="email" placeholder="Email Address" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"/>
-                      <input type="tel" placeholder="Phone Number" className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"/>
-                      <button type="button" className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition">
-                         Add Lead to Pipeline
-                      </button>
-                   </form>
-                </div>
-             </div>
+             <LeadsManagement />
           )}
 
           {/* EXHIBITION VIEW */}
@@ -389,9 +363,9 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
                         <div className="absolute top-0 right-0 bg-slate-200 text-slate-600 text-xs font-bold px-3 py-1 rounded-bl-xl">STANDARD</div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Silver Booth</h3>
                         <p className="text-slate-500 text-sm mb-4">Standard listing + 1 Webinar slot.</p>
-                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$500</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$1,650</p>
                         <button 
-                            onClick={() => { setPaymentService({ name: 'Silver Booth Exhibition', amount: 500 * 25 }); setPaymentModalOpen(true); }} // Approx rate
+                            onClick={() => { setPaymentService({ name: 'Silver Booth Exhibition', amount: 1650 * 25 }); setPaymentModalOpen(true); }}
                             className="w-full bg-slate-100 text-slate-900 py-3 rounded-xl font-bold hover:bg-slate-200"
                         >
                             Book Silver
@@ -401,21 +375,21 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
                         <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">POPULAR</div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Gold Booth</h3>
                         <p className="text-slate-500 text-sm mb-4">Featured listing + 3 Webinars + Email Blast.</p>
-                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$1,200</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$2,500</p>
                         <button 
-                            onClick={() => { setPaymentService({ name: 'Gold Booth Exhibition', amount: 1200 * 25 }); setPaymentModalOpen(true); }}
+                            onClick={() => { setPaymentService({ name: 'Gold Booth Exhibition', amount: 2500 * 25 }); setPaymentModalOpen(true); }}
                             className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 shadow-lg"
                         >
                             Book Gold
                         </button>
                     </div>
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 hover:shadow-xl transition relative overflow-hidden">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-900 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">EXCLUSIVE</div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Platinum Partner</h3>
                         <p className="text-slate-500 text-sm mb-4">Homepage Takeover + Unlimited Webinars.</p>
-                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$2,500</p>
+                        <p className="text-2xl font-extrabold text-slate-900 mb-6">$8,500</p>
                         <button 
-                            onClick={() => { setPaymentService({ name: 'Platinum Exhibition', amount: 2500 * 25 }); setPaymentModalOpen(true); }}
+                            onClick={() => { setPaymentService({ name: 'Platinum Exhibition', amount: 8500 * 25 }); setPaymentModalOpen(true); }}
                             className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800"
                         >
                             Book Platinum
@@ -423,6 +397,11 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
                     </div>
                 </div>
             </div>
+          )}
+
+          {/* SUPPORT VIEW */}
+          {currentView === 'support' && (
+             <SupportCenter />
           )}
 
         </div>
@@ -436,8 +415,8 @@ const UniversityDashboard: React.FC<UniversityDashboardProps> = ({ onLogout }) =
         amount={paymentService?.amount || 0}
         currency="ZMW"
         onSuccess={handlePaymentSuccess}
-        studentName={UNI_NAME}
-        studentId={UNI_ID}
+        studentName={universityProfile?.universityName || 'University'}
+        studentId={universityProfile?.university_id || ''}
       />
     </div>
   );

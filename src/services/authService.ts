@@ -14,12 +14,20 @@ import {
 import { auth, db, googleProvider } from "../firebase";
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { UserRole } from "../../types";
+import { integrationService } from "../../services/integrationService";
+import { handleFirestoreError, OperationType } from "../utils/firestoreUtils";
 
 // --- AUTHENTICATION SERVICE ---
 
 export const registerUser = async (email: string, password: string, name: string, role: UserRole = UserRole.PROSPECTIVE_STUDENT) => {
   let user: User | null = null;
   try {
+    // Ensure no user is signed in before registration to avoid admin-restricted-operation
+    if (auth.currentUser) {
+      await signOut(auth);
+      console.log("Signed out existing user before registration");
+    }
+
     console.log("Starting registration for:", email);
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     user = userCredential.user;
@@ -53,8 +61,32 @@ export const registerUser = async (email: string, password: string, name: string
             lastLogin: serverTimestamp()
         });
         console.log("Firestore profile created for:", user.uid);
+
+        // Trigger Welcome Email
+        try {
+            await integrationService.sendEmail({
+                to_email: email,
+                subject: "Welcome to Zambians In India (ZII)",
+                template_id: "welcome_email",
+                variables: {
+                    name: name,
+                    role: role,
+                    source: "registration"
+                }
+            });
+        } catch (emailError) {
+            console.warn("Welcome email failed to send, but registration succeeded:", emailError);
+        }
     } catch (firestoreError) {
         console.error("Firestore profile creation failed. Rolling back auth user.", firestoreError);
+        
+        // Log detailed error info
+        try {
+            handleFirestoreError(firestoreError, OperationType.CREATE, `users/${user.uid}`);
+        } catch (e) {
+            // handleFirestoreError throws, so we catch it to continue rollback
+        }
+
         // Rollback: Delete the auth user if firestore write fails
         if (user) {
             await deleteUser(user);
@@ -137,6 +169,20 @@ export const loginWithGoogle = async () => {
         lastLogin: serverTimestamp()
       });
       console.log("Firestore Profile Created");
+
+      // Trigger Welcome Email for Google User
+      if (user.email) {
+          await integrationService.sendEmail({
+              to_email: user.email,
+              subject: "Welcome to Zambians In India (ZII)",
+              template_id: "welcome_email",
+              variables: {
+                  name: user.displayName || "Student",
+                  role: UserRole.PROSPECTIVE_STUDENT,
+                  source: "google_login"
+              }
+          });
+      }
     } else {
       await updateDoc(userDocRef, {
         lastLogin: serverTimestamp()

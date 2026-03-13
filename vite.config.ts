@@ -18,6 +18,18 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        target: 'esnext',
+        minify: 'esbuild',
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              vendor: ['react', 'react-dom', 'framer-motion', 'lucide-react'],
+              firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
+            }
+          }
+        }
       }
     };
 });

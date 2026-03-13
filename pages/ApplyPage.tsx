@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, PublicView, AppPhase } from '../types';
+import WhatsAppFunnel from '../components/WhatsAppFunnel';
 import { 
   CheckCircle, FileText, ArrowRight, ShieldCheck, Plane, Download, 
   AlertTriangle, DollarSign, HelpCircle, ChevronDown, ChevronUp, 
@@ -56,7 +57,7 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
       {/* SECTION 1: REDESIGNED HERO */}
       <div className="bg-emerald-900 text-white pt-24 pb-16 relative overflow-hidden">
         {/* Full-width background image matching description: African student, certificate, classroom */}
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1548325946-b8c7320076a5?q=80&w=2070')] bg-cover bg-center opacity-30"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1548325946-b8c7320076a5?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30"></div>
         {/* Darker overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 to-emerald-900/60"></div>
         
@@ -291,6 +292,19 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ onLogin, onNavigate }) => {
           </div>
         </div>
       </div>
+
+      {/* WHATSAPP FUNNEL */}
+      <WhatsAppFunnel 
+        title="Official Application Groups" 
+        context="apply"
+        groups={[
+          { id: 1, name: 'Lusaka Intake 2026', link: 'https://chat.whatsapp.com/example1', number: '01' },
+          { id: 2, name: 'Copperbelt Intake 2026', link: 'https://chat.whatsapp.com/example2', number: '02' },
+          { id: 3, name: 'Southern Province 2026', link: 'https://chat.whatsapp.com/example3', number: '03' },
+          { id: 4, name: 'Central & Eastern 2026', link: 'https://chat.whatsapp.com/example4', number: '04' },
+          { id: 5, name: 'Northern & Muchinga 2026', link: 'https://chat.whatsapp.com/example5', number: '05' },
+        ]}
+      />
 
       <Footer onNavigate={onNavigate} />
     </div>

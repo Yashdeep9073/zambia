@@ -19,7 +19,7 @@ const MedicalPage: React.FC<MedicalPageProps> = ({ onNavigate, onLogin }) => {
     <div className="min-h-screen bg-slate-50 font-sans">
       {/* 1. HERO SECTION */}
       <div className="relative bg-slate-900 text-white min-h-[80vh] flex items-center justify-center overflow-hidden pt-20">
-         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2028')] bg-cover bg-center"></div>
+         <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1538108149393-fbbd81895907?q=80&w=2028&auto=format&fit=crop')] bg-cover bg-center"></div>
          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
          
          <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
@@ -138,7 +138,7 @@ const MedicalPage: React.FC<MedicalPageProps> = ({ onNavigate, onLogin }) => {
                </ul>
             </div>
             <div className="relative">
-               <img src="https://images.unsplash.com/photo-1516549655169-df83a092fc5b?q=80&w=2070" alt="Surgery" className="rounded-3xl shadow-2xl border-4 border-slate-700"/>
+               <img src="https://images.unsplash.com/photo-1516549655169-df83a092fc5b?q=80&w=2070&auto=format&fit=crop" alt="Surgery" className="rounded-3xl shadow-2xl border-4 border-slate-700"/>
                <div className="absolute -bottom-6 -left-6 bg-red-600 p-6 rounded-2xl shadow-xl">
                   <p className="text-3xl font-bold text-white">98%</p>
                   <p className="text-xs text-red-100 uppercase font-bold">Success Rate</p>

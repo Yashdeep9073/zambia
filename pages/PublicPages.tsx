@@ -892,7 +892,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
 
               {/* Hero Section */}
               <div className="bg-slate-900 text-white py-20 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070')] opacity-20 bg-cover bg-center"></div>
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] opacity-20 bg-cover bg-center"></div>
                   <div className="max-w-7xl mx-auto px-4 relative z-10 text-center">
                       <h1 className="text-3xl md:text-5xl font-extrabold mb-4">Courses & Programs</h1>
                       <p className="text-emerald-100 max-w-2xl mx-auto text-base md:text-lg">
@@ -1094,7 +1094,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
       <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-x-hidden">
         {/* 1. HERO SECTION */}
         <div className="relative bg-slate-900 text-white min-h-[80vh] flex items-center justify-center overflow-hidden pt-20">
-           <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070')] bg-cover bg-center"></div>
+           <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
            <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent"></div>
            
            <div className="max-w-5xl mx-auto px-4 relative z-10 text-center">
@@ -1152,7 +1152,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
               <div className="relative">
                  <div className="absolute inset-0 bg-orange-500 rounded-3xl transform rotate-3 opacity-10"></div>
                  <div className="relative bg-slate-100 rounded-3xl overflow-hidden shadow-2xl h-[500px]">
-                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070" alt="Students" className="w-full h-full object-cover"/>
+                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop" alt="Students" className="w-full h-full object-cover"/>
                     <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-8">
                        <p className="text-white font-bold text-xl">"Education is the most powerful weapon which you can use to change the world."</p>
                        <p className="text-orange-400 text-sm mt-2">- Nelson Mandela</p>
@@ -1422,7 +1422,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
           <div className="min-h-screen bg-slate-50 font-sans">
               {/* 1. HERO SECTION */}
               <div className="bg-slate-900 text-white pt-24 pb-16 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2084')] opacity-20 bg-cover bg-center"></div>
+                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2084&auto=format&fit=crop')] opacity-20 bg-cover bg-center"></div>
                   <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 to-slate-900/60"></div>
                   
                   <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
@@ -1685,7 +1685,7 @@ const PublicPages: React.FC<PublicPagesProps> = ({ view, onLogin, onNavigate }) 
                       <div className="grid md:grid-cols-3 gap-8">
                           <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition">
                               <div className="aspect-video bg-slate-900 rounded-xl mb-4 relative overflow-hidden group cursor-pointer">
-                                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070')] bg-cover opacity-50 group-hover:opacity-70 transition"></div>
+                                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2070&auto=format&fit=crop')] bg-cover opacity-50 group-hover:opacity-70 transition"></div>
                                   <div className="absolute inset-0 flex items-center justify-center">
                                       <Play className="w-12 h-12 text-white fill-current"/>
                                   </div>

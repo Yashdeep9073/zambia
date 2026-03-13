@@ -41,6 +41,7 @@ export interface DbApplication {
   firstSubmissionTimestamp: any;
   lastUpdateTimestamp: any;
   submissionAttempts: number;
+  lifecycle_status: string;
   isLocked: boolean;
   lockedReason?: string;
   ipAddressAtSubmission?: string;
